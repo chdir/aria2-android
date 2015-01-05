@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Aria2</string>
+    <string name="enable_aria2_service">Start Aria2</string>
+    <string name="transdroid_installed">Transdroid installation</string>
+</resources>

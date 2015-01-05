@@ -1,0 +1,6 @@
+<resources>
+    <style name="AppTheme" parent="Theme.AppCompat">
+        <item name="asb_switchStyle">@style/Widget.Holo.CompoundButton.Switch</item>
+        <item name="asb_switchPreferenceStyle">@style/Preference.SwitchPreference</item>
+    </style>
+</resources>

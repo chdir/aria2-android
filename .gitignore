@@ -1,0 +1,49 @@
+# there is no policy for using these project files
+.settings
+.classpath
+.project
+.manager
+.scala_dependencies
+.cache
+.gradle
+
+local.properties
+
+# .idea and *.iml are now shared per https://intellij-support.jetbrains.com/entries/23393067
+*.ipr
+*.iws
+*.iml
+.idea
+# building
+target
+build
+out
+libs
+null
+tmp
+temp
+dist
+test-output
+build.log
+gen
+bin
+classes
+*.apk
+/*.log
+/logs/*
+
+# misc
+Thumbs.db
+.DS_Store
+*~
+.directory
+.svn
+
+# compiled source
+*.com
+*.class
+*.dll
+*.exe
+
+# compiled dynamic libraries
+*.so

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <net.sf.aria2.util.SaneSwitch
+            android:enabled="false"
+            android:defaultValue="false"
+            android:key="@string/service_enable_pref"
+            android:title="@string/enable_aria2_service" />
+    <net.sf.aria2.util.SaneSwitch
+            android:enabled="false"
+            android:defaultValue="false"
+            android:key="@string/client_installed_pref"
+            android:title="@string/transdroid_installed" />
+</PreferenceScreen>
