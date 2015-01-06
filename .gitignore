@@ -31,6 +31,7 @@ classes
 *.apk
 /*.log
 /logs/*
+jniLibs
 
 # misc
 Thumbs.db

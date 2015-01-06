@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="service_enable_pref">enable_aria2</string>
+    <string name="off_site_pref">client_available</string>
+    <string name="aria2_site">http://aria2.sf.net</string>
+    <string name="download_dir_pref">download_dir</string>
+    <string name="rpc_secret">123</string>
+</resources>

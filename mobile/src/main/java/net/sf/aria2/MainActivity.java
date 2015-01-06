@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.*;
+import android.preference.EditTextPreference;
 import android.preference.Preference;
 import android.preference.PreferenceActivity;
 import android.support.v4.content.ContextCompat;
@@ -21,6 +22,9 @@ public final class MainActivity extends PreferenceActivity implements ServiceCon
     private CloseableHandler uiThreadHandler;
     private Intent sericeMoniker;
     private IAria2 serviceLink;
+    private ResultReceiver backLink;
+
+    private File downloadDir;
 
     @Override
     @SuppressWarnings("deprecation")
@@ -31,6 +35,32 @@ public final class MainActivity extends PreferenceActivity implements ServiceCon
         sericeMoniker = new Intent(getApplicationContext(), Aria2Service.class);
 
         pref = (TwoStatePreference) findPreference(getString(R.string.service_enable_pref));
+
+        EditTextPreference dDir = (EditTextPreference) findPreference(getString(R.string.download_dir_pref));
+        String dDirPath = dDir.getText();
+        if (!dDirPath.isEmpty())
+            downloadDir = new File(dDirPath);
+
+        if (downloadDir == null) {
+            downloadDir = deriveDownloadDir();
+            dDir.setText(downloadDir.getAbsolutePath());
+        }
+    }
+
+    private File deriveDownloadDir() {
+        File aria2Dir;
+        File[] externalDirs = ContextCompat.getExternalFilesDirs(this, Environment.DIRECTORY_MUSIC);
+        if (externalDirs.length > 1 && externalDirs[1] != null)
+            aria2Dir = externalDirs[1].getParentFile();
+        else {
+            File externalDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+            if (Environment.MEDIA_MOUNTED.equals(EnvironmentCompat.getStorageState(externalDir)))
+                aria2Dir = externalDir;
+            else
+                aria2Dir = getFilesDir();
+        }
+        aria2Dir = new File(aria2Dir, "Aria2Download");
+        return aria2Dir;
     }
 
     private boolean changeAriaServiceState(Preference p) {
@@ -49,7 +79,7 @@ public final class MainActivity extends PreferenceActivity implements ServiceCon
                     setPrefEnabled(false);
                 }
             } else {
-                if (startService(constructResultReceiver(new Intent(sericeMoniker))) == null)
+                if (startService(constructServiceCommand(new Intent(sericeMoniker))) == null)
                     setPrefEnabled(true);
             }
         }
@@ -64,6 +94,15 @@ public final class MainActivity extends PreferenceActivity implements ServiceCon
 
         uiThreadHandler = new CloseableHandler();
 
+        backLink = new SimpleResultReceiver<Boolean>(uiThreadHandler) {
+            @Override
+            protected void receiveResult(Boolean started) {
+                pref.setChecked(started);
+
+                setPrefEnabled(true);
+            }
+        };
+
         pref.setOnPreferenceClickListener(this::changeAriaServiceState);
 
         bindService(sericeMoniker, this, Context.BIND_AUTO_CREATE);
@@ -75,6 +114,7 @@ public final class MainActivity extends PreferenceActivity implements ServiceCon
 
         unbindService(this);
 
+        backLink = null;
         serviceLink = null;
 
         super.onStop();
@@ -82,9 +122,13 @@ public final class MainActivity extends PreferenceActivity implements ServiceCon
 
     @Override
     public void onServiceConnected(ComponentName name, IBinder service) {
-        serviceLink = IAria2.Stub.asInterface(service);
         pref.setEnabled(true);
+
+        serviceLink = IAria2.Stub.asInterface(service);
+
         try {
+            serviceLink.setResultReceiver(backLink);
+
             pref.setChecked(serviceLink.isRunning());
         } catch (RemoteException e) {
             // likely service process dying right after binding;
@@ -118,37 +162,21 @@ public final class MainActivity extends PreferenceActivity implements ServiceCon
         finish();
     }
 
-    private Intent constructResultReceiver(Intent serviceMoniker) {
+    private Intent constructServiceCommand(Intent serviceMoniker) {
         final Config ariaConfig = new Config();
 
-        final Intent intent = new SimpleResultReceiver<Boolean>(uiThreadHandler) {
-            @Override
-            protected void receiveResult(Boolean started) {
-                pref.setChecked(started);
+        final Intent intent = ariaConfig.putInto(serviceMoniker);
 
-                setPrefEnabled(true);
-            }
-        }.stuffInto(ariaConfig.putInto(serviceMoniker));
-
-        String binaryName = Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP ? "aria2c_PIC" : "aria2c";
+        String binaryName = Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP ? "aria2_PIC" : "aria2";
+        binaryName = "lib" + binaryName + "_exec.so";
         binaryName = new File(getApplicationInfo().nativeLibraryDir, binaryName).getAbsolutePath();
         ariaConfig.setProcessname(binaryName);
 
-        File aria2Dir;
-        File[] externalDirs = ContextCompat.getExternalFilesDirs(this, Environment.DIRECTORY_MUSIC);
-        if (externalDirs.length > 1 && externalDirs[1] != null)
-            aria2Dir = externalDirs[1].getParentFile();
-        else {
-            File externalDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-            if (Environment.MEDIA_MOUNTED.equals(EnvironmentCompat.getStorageState(externalDir)))
-                aria2Dir = externalDir;
-            else
-                aria2Dir = getFilesDir();
-        }
-        aria2Dir = new File(aria2Dir, "Aria2Download");
+        downloadDir.mkdirs(); // TODO check for success, check if space is sufficient, make configurable
 
-        final File sessionFile = new File(aria2Dir, ".aria2.session.gz");
+        final File sessionFile = new File(downloadDir, ".aria2.session.gz");
         ariaConfig.setSessionPath(sessionFile);
+        ariaConfig.setRPCSecret(getString(R.string.rpc_secret));
 
         return intent;
     }

@@ -5,9 +5,31 @@
             android:defaultValue="false"
             android:key="@string/service_enable_pref"
             android:title="@string/enable_aria2_service" />
-    <net.sf.aria2.util.SaneSwitch
-            android:enabled="false"
+
+    <EditTextPreference
+            android:defaultValue=""
+            android:key="@string/download_dir_pref"
+            android:title="@string/download_dir"
+            android:summary="@string/download_dir_summary"/>
+
+    <Preference
             android:defaultValue="false"
-            android:key="@string/client_installed_pref"
-            android:title="@string/transdroid_installed" />
+            android:key="host"
+            android:title="localhost"
+            android:summary="@string/host"/>
+
+    <Preference
+            android:defaultValue="false"
+            android:key="port"
+            android:title="6800"
+            android:summary="@string/port"/>
+
+    <Preference
+            android:defaultValue="false"
+            android:key="@string/off_site_pref"
+            android:title="@string/official_site"
+            android:summary="@string/aria2_site">
+        <intent android:action="android.intent.action.VIEW"
+                android:data="@string/aria2_site"/>
+    </Preference>
 </PreferenceScreen>

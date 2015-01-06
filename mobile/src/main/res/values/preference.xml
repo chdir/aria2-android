@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <string name="service_enable_pref">enable_aria2</string>
-    <string name="client_installed_pref">client_available</string>
-</resources>

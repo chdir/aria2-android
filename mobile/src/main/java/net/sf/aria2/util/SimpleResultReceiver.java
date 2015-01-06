@@ -1,14 +1,12 @@
 package net.sf.aria2.util;
 
 import android.content.Intent;
-import android.os.Bundle;
-import android.os.Handler;
-import android.os.ResultReceiver;
+import android.os.*;
 
 import java.io.Serializable;
 
 public abstract class SimpleResultReceiver<X extends Serializable> extends ResultReceiver {
-    private final static String OBJ = "obj";
+    public final static String OBJ = "obj";
 
     public SimpleResultReceiver(Handler handler) {
         super(new Handler());
@@ -25,7 +23,7 @@ public abstract class SimpleResultReceiver<X extends Serializable> extends Resul
         return container;
     }
 
-    public static <T extends Serializable> SimpleResultReceiver<T> from(Intent container) {
+    public static ResultReceiver from(Intent container) {
         return container.getParcelableExtra(OBJ);
     }
 

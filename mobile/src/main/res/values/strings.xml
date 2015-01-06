@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Aria2</string>
-    <string name="enable_aria2_service">Start Aria2</string>
-    <string name="transdroid_installed">Transdroid installation</string>
+    <string name="app_name">aria2</string>
+    <string name="enable_aria2_service">Start aria2</string>
+    <string name="official_site">Official site</string>
+    <string name="will_start_later">You need network connection to use aria2</string>
+    <string name="host">Host</string>
+    <string name="port">Port</string>
+    <string name="download_dir">Download directory</string>
+    <string name="download_dir_summary">Also used for misc files</string>
 </resources>
