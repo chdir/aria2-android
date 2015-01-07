@@ -1,9 +1,12 @@
 [submodule "mobile/jni/c-ares"]
 	path = mobile/jni/c-ares
 	url = https://github.com/bagder/c-ares.git
+	ignore = dirty
 [submodule "mobile/jni/openssl"]
 	path = mobile/jni/openssl
 	url = https://github.com/openssl/openssl.git
+	ignore = dirty
 [submodule "mobile/jni/aria2"]
 	path = mobile/jni/aria2
 	url = https://github.com/tatsuhiro-t/aria2.git
+	ignore = dirty
