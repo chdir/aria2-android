@@ -31,6 +31,7 @@
  */
 package net.sf.aria2;
 
+import android.annotation.SuppressLint;
 import android.app.Notification;
 import android.app.PendingIntent;
 import android.app.Service;
@@ -41,8 +42,10 @@ import android.content.IntentFilter;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.*;
+import android.preference.PreferenceActivity;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.net.ConnectivityManagerCompat;
+import android.util.Log;
 import android.widget.Toast;
 import net.sf.aria2.util.SimpleResultReceiver;
 
@@ -86,7 +89,7 @@ public final class Aria2Service extends Service {
 
         final ConnectivityManager cm = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
         final NetworkInfo ni = cm.getActiveNetworkInfo();
-        if (ni.isConnectedOrConnecting())
+        if (ni != null && ni.isConnectedOrConnecting())
             startAria2(Config.from(intent));
         else {
             if (intent.hasExtra(Config.EXTRA_INTERACTIVE))
@@ -169,30 +172,6 @@ public final class Aria2Service extends Service {
         return true;
     }
 
-    private void updateNf() {
-        if (isRunning()) {
-            if (bindingCounter == 0)
-                startForeground(-1, createNf());
-        } else
-            stopForeground(true);
-    }
-
-    private Notification createNf() {
-        final PendingIntent contentIntent = PendingIntent.getActivity(
-                getApplicationContext(), 0,
-                new Intent(getApplicationContext(), MainActivity.class),
-                PendingIntent.FLAG_UPDATE_CURRENT);
-
-        return new NotificationCompat.Builder(getApplicationContext())
-                .setSmallIcon(R.drawable.ic_nf_icon)
-                .setTicker("Aria2 is running")
-                .setContentTitle("Aria2 is running")
-                .setContentText("Touch to open settings")
-                .setContentIntent(contentIntent)
-                .setOnlyAlertOnce(true)
-                .build();
-    }
-
     private boolean isRunning() {
         return lastInvocation != null && lastInvocation.isRunning();
     }
@@ -204,6 +183,31 @@ public final class Aria2Service extends Service {
         Bundle b = new Bundle();
         b.putSerializable(SimpleResultReceiver.OBJ, state);
         backLink.send(0, b);
+    }
+
+    private Notification createNf() {
+        @SuppressLint("InlinedApi")
+        final Intent targetIntent = new Intent(getApplicationContext(), MainActivity.class)
+                .putExtra(PreferenceActivity.EXTRA_SHOW_FRAGMENT, "net.sf.aria2.MainActivity$Aria2Preferences");
+
+        final PendingIntent contentIntent = PendingIntent.getActivity(
+                getApplicationContext(), 0, targetIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+        return new NotificationCompat.Builder(getApplicationContext())
+                .setSmallIcon(R.drawable.ic_nf_icon)
+                .setTicker("Aria2 is running")
+                .setContentTitle("Aria2 is running")
+                .setContentText("Touch to open settings")
+                .setContentIntent(contentIntent)
+                .setOnlyAlertOnce(true)
+                .build();
+    }
+
+    private void updateNf() {
+        if (bindingCounter == 0) {
+            if (isRunning())
+                startForeground(-1, createNf());
+        } else stopForeground(true);
     }
 
     private final class Binder extends IAria2.Stub {
@@ -233,22 +237,18 @@ public final class Aria2Service extends Service {
         }
 
         public void run() {
-            updateNf();
-
             try {
                 final ProcessBuilder pBuilder = new ProcessBuilder()
                         .redirectErrorStream(true)
                         .command(properties);
 
-                List<String> args = pBuilder.command();
+                pBuilder.environment().put("HOME", getFilesDir().getAbsolutePath());
 
-                args.add("--stop-with-process=" + android.os.Process.myPid());
+                pBuilder.command().add("--stop-with-process=" + android.os.Process.myPid());
 
                 proc = pBuilder.start();
 
                 try (Scanner iStream = new Scanner(proc.getInputStream()).useDelimiter("\\A")) {
-                    updateNf();
-
                     sendResult(true);
 
                     final String errText;
@@ -257,7 +257,9 @@ public final class Aria2Service extends Service {
                                 errText, Toast.LENGTH_LONG).show());
                 }
             }
-            catch (IOException ignore) {}
+            catch (IOException tooBad) {
+                Log.e(Config.TAG, tooBad.getLocalizedMessage());
+            }
             finally {
                 try {
                     int r = proc.waitFor();
@@ -265,6 +267,7 @@ public final class Aria2Service extends Service {
                     Thread.currentThread().interrupt();
                 } finally {
                     proc = null;
+
                     stopSelf();
 
                     sendResult(false);

@@ -31,98 +31,138 @@
  */
 package net.sf.aria2;
 
-import android.content.ComponentName;
-import android.content.Context;
-import android.content.Intent;
-import android.content.ServiceConnection;
+import android.annotation.TargetApi;
+import android.content.*;
 import android.os.*;
-import android.preference.EditTextPreference;
 import android.preference.Preference;
 import android.preference.PreferenceActivity;
-import android.support.v4.content.ContextCompat;
-import android.support.v4.os.EnvironmentCompat;
+import android.preference.PreferenceFragment;
+import android.preference.PreferenceScreen;
 import android.widget.Toast;
 import net.sf.aria2.util.CloseableHandler;
 import net.sf.aria2.util.SimpleResultReceiver;
 import org.jraf.android.backport.switchwidget.TwoStatePreference;
 
-import java.io.File;
+import java.util.List;
 
-public final class MainActivity extends PreferenceActivity implements ServiceConnection {
-    private TwoStatePreference pref;
-    private CloseableHandler uiThreadHandler;
-    private Intent sericeMoniker;
-    private IAria2 serviceLink;
-    private ResultReceiver backLink;
-
-    private File downloadDir;
+public final class MainActivity extends PreferenceActivity {
+    private ServiceControl serviceControl;
 
     @Override
     @SuppressWarnings("deprecation")
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        addPreferencesFromResource(R.xml.layout);
 
-        sericeMoniker = new Intent(getApplicationContext(), Aria2Service.class);
-
-        pref = (TwoStatePreference) findPreference(getString(R.string.service_enable_pref));
-
-        EditTextPreference dDir = (EditTextPreference) findPreference(getString(R.string.download_dir_pref));
-        String dDirPath = dDir.getText();
-        if (!dDirPath.isEmpty())
-            downloadDir = new File(dDirPath);
-
-        if (downloadDir == null) {
-            downloadDir = deriveDownloadDir();
-            dDir.setText(downloadDir.getAbsolutePath());
+        // at some point after API 11 framework begins to throw, when you use old style..
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB) {
+            addPreferencesFromResource(R.xml.preferences_aria2);
+            addPreferencesFromResource(R.xml.preferences_client);
+            addPreferencesFromResource(R.xml.preferences_misc);
+            serviceControl = new ServiceControl(this);
+            serviceControl.init(getPreferenceScreen());
         }
-    }
-
-    private File deriveDownloadDir() {
-        File aria2Dir;
-        File[] externalDirs = ContextCompat.getExternalFilesDirs(this, Environment.DIRECTORY_MUSIC);
-        if (externalDirs.length > 1 && externalDirs[1] != null)
-            aria2Dir = externalDirs[1].getParentFile();
-        else {
-            File externalDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-            if (Environment.MEDIA_MOUNTED.equals(EnvironmentCompat.getStorageState(externalDir)))
-                aria2Dir = externalDir;
-            else
-                aria2Dir = getFilesDir();
-        }
-        aria2Dir = new File(aria2Dir, "Aria2Download");
-        return aria2Dir;
-    }
-
-    private boolean changeAriaServiceState(Preference p) {
-        if (p.isEnabled()) {
-            pref.setEnabled(false);
-            uiThreadHandler.postDelayed(() -> pref.setEnabled(true), 4000);
-
-            if (pref.isChecked()) {
-                try {
-                    serviceLink.askToStop();
-                } catch (RemoteException e) {
-                    // likely service process dying during the call
-                    // let's hope, that onSerivceDisconnected will fix it for us
-                    e.printStackTrace();
-
-                    setPrefEnabled(false);
-                }
-            } else {
-                if (startService(constructServiceCommand(new Intent(sericeMoniker))) == null)
-                    setPrefEnabled(true);
-            }
-        }
-
-        return true;
     }
 
     @Override
-    @SuppressWarnings("deprecation")
+    public boolean onIsMultiPane() {
+        // Thank you for being so full of shit, dear Android developers -
+        // https://stackoverflow.com/q/18138642
+        return getResources().getBoolean(R.bool.use_multipane);
+    }
+
+    @Override
+    protected boolean isValidFragment(String fragmentName) {
+        return true; // SURE
+    }
+
+    @Override
+    public void onBuildHeaders(List<Header> target) {
+        loadHeadersFromResource(R.xml.headers, target);
+    }
+
+    @Override
     protected void onStart() {
         super.onStart();
 
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB)
+            serviceControl.start();
+    }
+
+    @Override
+    protected void onStop() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB)
+            serviceControl.stop();
+
+        super.onStop();
+    }
+
+    @TargetApi(Build.VERSION_CODES.HONEYCOMB)
+    public static class Aria2Preferences extends PreferenceFragment {
+        private ServiceControl serviceControl;
+
+        @Override
+        public void onCreate(Bundle savedInstanceState) {
+            super.onCreate(savedInstanceState);
+            addPreferencesFromResource(R.xml.preferences_aria2);
+            serviceControl = new ServiceControl(getActivity());
+            serviceControl.init(getPreferenceScreen());
+        }
+
+        @Override
+        public void onStart() {
+            super.onStart();
+
+            serviceControl.start();
+        }
+
+        @Override
+        public void onStop() {
+            serviceControl.stop();
+
+            super.onStop();
+        }
+    }
+
+    @TargetApi(Build.VERSION_CODES.HONEYCOMB)
+    public static class FrontendPreferences  extends PreferenceFragment {
+        @Override
+        public void onCreate(Bundle savedInstanceState) {
+            super.onCreate(savedInstanceState);
+            addPreferencesFromResource(R.xml.preferences_client);
+        }
+    }
+
+    @TargetApi(Build.VERSION_CODES.HONEYCOMB)
+    public static class MiscPreferences  extends PreferenceFragment {
+        @Override
+        public void onCreate(Bundle savedInstanceState) {
+            super.onCreate(savedInstanceState);
+            addPreferencesFromResource(R.xml.preferences_misc);
+        }
+    }
+}
+
+final class ServiceControl extends ContextWrapper implements ServiceConnection {
+    private TwoStatePreference pref;
+    private CloseableHandler uiThreadHandler;
+    private Intent sericeMoniker;
+    private IAria2 serviceLink;
+    private ResultReceiver backLink;
+    private ConfigBuilder builder;
+
+    public ServiceControl(Context base) {
+        super(base);
+    }
+
+    public void init(PreferenceScreen screen) {
+        sericeMoniker = new Intent(getApplicationContext(), Aria2Service.class);
+
+        builder = new ConfigBuilder(this);
+
+        pref = (TwoStatePreference) screen.findPreference(getString(R.string.service_enable_pref));
+    }
+
+    public void start() {
         uiThreadHandler = new CloseableHandler();
 
         backLink = new SimpleResultReceiver<Boolean>(uiThreadHandler) {
@@ -139,16 +179,13 @@ public final class MainActivity extends PreferenceActivity implements ServiceCon
         bindService(sericeMoniker, this, Context.BIND_AUTO_CREATE);
     }
 
-    @Override
-    protected void onStop() {
+    public void stop() {
         uiThreadHandler.close();
 
         unbindService(this);
 
         backLink = null;
         serviceLink = null;
-
-        super.onStop();
     }
 
     @Override
@@ -182,6 +219,30 @@ public final class MainActivity extends PreferenceActivity implements ServiceCon
             bailOutBecauseOfBindingFailure();
     }
 
+    private boolean changeAriaServiceState(Preference p) {
+        if (p.isEnabled()) {
+            pref.setEnabled(false);
+            uiThreadHandler.postDelayed(() -> pref.setEnabled(true), 4000);
+
+            if (pref.isChecked()) {
+                try {
+                    serviceLink.askToStop();
+                } catch (RemoteException e) {
+                    // likely service process dying during the call
+                    // let's hope, that onSerivceDisconnected will fix it for us
+                    e.printStackTrace();
+
+                    setPrefEnabled(false);
+                }
+            } else {
+                if (startService(builder.constructServiceCommand(new Intent(sericeMoniker))) == null)
+                    setPrefEnabled(true);
+            }
+        }
+
+        return true;
+    }
+
     private void setPrefEnabled(boolean enabled) {
         pref.setEnabled(enabled);
         uiThreadHandler.removeCallbacksAndMessages(null);
@@ -190,25 +251,7 @@ public final class MainActivity extends PreferenceActivity implements ServiceCon
     private void bailOutBecauseOfBindingFailure() {
         // we can't really do anything without ability to bind to the service
         Toast.makeText(this, "Failed to start Aria2 remote service", Toast.LENGTH_LONG).show();
-        finish();
-    }
 
-    private Intent constructServiceCommand(Intent serviceMoniker) {
-        final Config ariaConfig = new Config();
-
-        final Intent intent = ariaConfig.putInto(serviceMoniker);
-
-        String binaryName = Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP ? "aria2_PIC" : "aria2";
-        binaryName = "lib" + binaryName + "_exec.so";
-        binaryName = new File(getApplicationInfo().nativeLibraryDir, binaryName).getAbsolutePath();
-        ariaConfig.setProcessname(binaryName);
-
-        downloadDir.mkdirs(); // TODO check for success, check if space is sufficient, make configurable
-
-        final File sessionFile = new File(downloadDir, ".aria2.session.gz");
-        ariaConfig.setSessionPath(sessionFile);
-        ariaConfig.setRPCSecret(getString(R.string.rpc_secret));
-
-        return intent;
+        throw new IllegalStateException("Failed to start Aria2 remote service");
     }
 }

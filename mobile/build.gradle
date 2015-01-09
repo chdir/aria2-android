@@ -1,6 +1,7 @@
 import java.util.regex.Pattern
 
 apply plugin: 'com.android.application'
+apply plugin: 'de.undercouch.download'
 
 android {
     compileSdkVersion 21
@@ -10,13 +11,39 @@ android {
         applicationId "net.sf.aria2"
         minSdkVersion 9
         targetSdkVersion 21
-        versionCode 1
-        versionName "1.0"
+        versionCode 5 // bump by 3 per release
+        versionName "0.9.0.2"
+    }
+    splits {
+        abi {
+            enable true
+            reset()
+            include 'x86', 'armeabi', 'armeabi-v7a'
+            universalApk true
+        }
+    }
+    signingConfigs {
+        release {
+            def keystorePathEnv = System.getenv('KEYSTORE')
+            def keyAliasEnv = System.getenv('KEY_ALIAS')
+
+            storeFile file(keystorePathEnv?.trim() ? keystorePathEnv : 'release.keystore')
+            keyAlias 'alias'
+
+            storePassword '***'
+            keyPassword '***'
+        }
     }
     buildTypes {
-        release {
+        debug {
             minifyEnabled false
+            shrinkResources false
+        }
+        release {
+            minifyEnabled true
+            shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
         }
     }
     compileOptions {
@@ -33,6 +60,7 @@ dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     compile 'com.android.support:appcompat-v7:21.0.3'
     compile 'org.jraf:android-switch-backport:1.4.0'
+    compile 'com.android.support:support-v4:21.0.3'
 }
 
 def aria2NdkTaskPattern = Pattern.compile("ndkBuildAria2Abi_(.+)");
@@ -82,7 +110,7 @@ tasks.addRule("NDK tasks") { String taskName ->
             commandLine "$projectDir.absolutePath/jni/build-natives.sh", "$hostName", "$abi", "$toolchain", "$arch"
 
             inputs.file "$projectDir.absolutePath/jni/build-natives.sh"
-            outputs.dir "$libsDir/$abi"
+            outputs.dir abi.equals("armeabi") ? "$libsDir/armeabi-v7a" : "$libsDir/$abi"
 
             dependsOn prepTask
         }
@@ -91,11 +119,30 @@ tasks.addRule("NDK tasks") { String taskName ->
             commandLine "$projectDir.absolutePath/jni/build-natives.sh", "$hostName", "$abi", "$toolchain", "$arch"
 
             inputs.file "$projectDir.absolutePath/jni/build-natives.sh"
-            outputs.dir "$libsDir/$abi"
+            outputs.dir abi.equals("armeabi") ? "$libsDir/armeabi-v7a" : "$libsDir/$abi"
 
             dependsOn picTask
         }
     }
+}
+
+import de.undercouch.gradle.tasks.download.Download
+
+task downloadArmv5binary(type: Download) {
+    src 'http://sourceforge.net/projects/aria2/files/stable/aria2-1.18.8/aria2-1.18.8-android-build1.zip'
+    dest new File(buildDir, 'armv5aria.zip')
+    onlyIfNewer true
+}
+
+task downloadAndUnzipArmv5Binary(dependsOn: downloadArmv5binary, type: Copy) {
+    from {
+        zipTree(downloadArmv5binary.dest).matching {
+            include '**/aria2c'
+        }[0]
+    }
+
+    rename 'aria2c', 'aria2'
+    into "$projectDir.absolutePath/src/main/jniLibs/armeabi"
 }
 
 task renameExecutables(type: Copy) {
@@ -107,10 +154,51 @@ task renameExecutables(type: Copy) {
     rename(/(.+)/, 'lib$1_exec.so')
 }
 
-tasks.renameExecutables.dependsOn ndkBuildAria2Abi_x86, ndkBuildAria2Abi_armeabi
+tasks.renameExecutables.dependsOn ndkBuildAria2Abi_x86, ndkBuildAria2Abi_armeabi, downloadAndUnzipArmv5Binary
 
-tasks.clean.dependsOn cleanRenameExecutables
+//tasks.clean.dependsOn cleanRenameExecutables
 
 tasks.withType(JavaCompile.class).each { JavaCompile compileTask ->
     compileTask.dependsOn renameExecutables
+}
+
+import javax.swing.JFileChooser
+import javax.swing.JOptionPane
+
+task askForPasswords << {
+    if (!android.signingConfigs.release.storeFile.exists()) {
+        def fc = new JFileChooser(dialogTitle: 'Keystore file: ', fileSelectionMode: JFileChooser.FILES_ONLY);
+        fc.showOpenDialog();
+        def keystoreFile = fc.getSelectedFile();
+
+        android.signingConfigs.release.storeFile = keystoreFile
+    }
+
+    def readln = JOptionPane.&showInputDialog
+
+    if ('defaultKeyAlias' == android.signingConfigs.release.storePassword)
+        android.signingConfigs.release.keyAlias = readln 'Key alias: '
+
+    android.signingConfigs.release.storePassword = readln 'Keystore password: '
+    android.signingConfigs.release.keyPassword = readln 'Key password: '
+}
+
+tasks.whenTaskAdded { theTask ->
+    if (theTask.name.matches("package(:?.+)Release")) {
+        theTask.dependsOn "askForPasswords"
+    }
+}
+
+ext.versionCodes = ['armeabi': 0, 'armeabi-v7a': 1, 'x86': 2]
+
+import com.android.build.OutputFile
+
+android.applicationVariants.all { variant ->
+    // assign different version code for each output
+    variant.outputs.each { output ->
+        def verAdd = project.versionCodes.get(output.getFilter(OutputFile.ABI))
+
+        if (verAdd)
+            output.versionCodeOverride = android.defaultConfig.versionCode + verAdd
+    }
 }

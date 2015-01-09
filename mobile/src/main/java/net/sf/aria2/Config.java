@@ -36,6 +36,7 @@ import android.os.Parcel;
 import android.os.Parcelable;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -43,12 +44,16 @@ import java.util.List;
 final class Config extends ArrayList<String> implements Parcelable {
     private static final String EXTRA_NAME = BuildConfig.APPLICATION_ID + ".config";
 
-    public static final String EXTRA_INTERACTIVE = "interactive";
+    static final String EXTRA_INTERACTIVE = BuildConfig.APPLICATION_ID + ".interactive";
+
+    static final String TAG = "aria2j";
 
     public Config() {
-        super(16);
+        super(20);
         addAll(Arrays.asList(
-                "-q", "--enable-rpc",
+                "-c", "-q", "--enable-rpc", "--referer=*",
+                "--bt-save-metadata=true",
+                "--rpc-allow-origin-all=true",
                 "--rpc-save-upload-metadata=true",
                 "--save-session-interval=10"));
     }
@@ -74,11 +79,24 @@ final class Config extends ArrayList<String> implements Parcelable {
     public void setSessionPath(File sessionFile) {
         final String fileName = sessionFile.getAbsolutePath();
 
+        final File sessionParent = sessionFile.getParentFile();
+        //noinspection ResultOfMethodCallIgnored
+        sessionParent.mkdirs(); // (a guard for native code)
+
+        final File configFile = new File(sessionParent, "aria2.txt");
+        //noinspection ResultOfMethodCallIgnored
+        try {
+            configFile.createNewFile(); // (a guard for native code)
+        } catch (IOException ignore) {  ignore.printStackTrace(); }
+
         add("-d");
-        add(sessionFile.getParent());
+        add(sessionParent.getAbsolutePath());
 
         add("--save-session");
         add(fileName);
+
+        add("--conf-path");
+        add(configFile.getAbsolutePath());
 
         if (sessionFile.exists()) {
             add("-i");
@@ -101,7 +119,7 @@ final class Config extends ArrayList<String> implements Parcelable {
         dest.writeArray(toArray());
     }
 
-    public static Parcelable.Creator<Config> CREATOR = new Creator<Config>() {
+    public static final Parcelable.Creator<Config> CREATOR = new Creator<Config>() {
         @Override
         public Config createFromParcel(Parcel source) {
             return new Config(Arrays.asList(source.readArray(getClass().getClassLoader())));

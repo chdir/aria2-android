@@ -1,8 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools"
+           tools:ignore="TypographyDashes,MissingTranslation">
+    <string name="app_name">aria2</string>
     <string name="service_enable_pref">enable_aria2</string>
     <string name="off_site_pref">client_available</string>
-    <string name="aria2_site">http://aria2.sf.net</string>
     <string name="download_dir_pref">download_dir</string>
     <string name="rpc_secret">123</string>
+    <bool name="use_multipane">false</bool>
+
+    <string name="transdroid_link">market://details?id=org.transdroid.lite</string>
+    <string name="gpl_url">https://www.gnu.org/licenses</string>
+    <string name="source_url">https://github.com/Alexander--/aria2-android</string>
+    <string name="aria2_url">http://aria2.sf.net</string>
+
+    <string name="license_summary">GNU GPL v3</string>
+    <string name="transdroid">Transdroid</string>
 </resources>

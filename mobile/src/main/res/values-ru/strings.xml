@@ -1,10 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="enable_aria2_service">Запуск aria2</string>
-    <string name="official_site">Сайт проекта</string>
+    <string name="official_site">Сайт aria2 (англ.)</string>
     <string name="will_start_later">Для работы aria2 требуется сетевое подключение</string>
     <string name="host">Хост</string>
     <string name="port">Порт</string>
     <string name="download_dir">Каталог для загрузок</string>
     <string name="download_dir_summary">Также используется для вспомогательных файлов</string>
+    <string name="download_transdroid">Скачать фронтенд из Google Play</string>
+    <string name="license">Лицензия</string>
+    <string name="view_source_code">Исходный код</string>
+    <string name="view_source_code_summary">Исходный код Android-порта aria2 на Github</string>
+    <string name="pref_header_frontend">Графический интерфейс</string>
+    <string name="pref_header_other">О программе</string>
 </resources>

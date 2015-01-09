@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<preference-headers xmlns:tools="http://schemas.android.com/tools"
+                    xmlns:android="http://schemas.android.com/apk/res/android"
+                    tools:ignore="UnusedAttribute">
+    <header
+            android:fragment="net.sf.aria2.MainActivity$Aria2Preferences"
+            android:title="@string/app_name"/>
+
+    <header
+            android:fragment="net.sf.aria2.MainActivity$FrontendPreferences"
+            android:title="@string/pref_header_frontend"/>
+
+    <header
+            android:fragment="net.sf.aria2.MainActivity$MiscPreferences"
+            android:title="@string/pref_header_other"/>
+</preference-headers>

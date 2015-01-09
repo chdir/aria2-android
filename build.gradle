@@ -4,6 +4,8 @@ buildscript {
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:1.0.0'
+        classpath 'com.android.tools.build:builder-model:1.0.0'
+        classpath 'de.undercouch:gradle-download-task:1.2'
         classpath 'me.tatarka:gradle-retrolambda:2.5.0'
     }
 }

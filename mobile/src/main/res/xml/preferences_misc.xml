@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <Preference
+            android:key="upstream_link"
+            android:title="@string/official_site">
+        <intent android:action="android.intent.action.VIEW"
+                android:data="@string/aria2_url"/>
+    </Preference>
+
+    <Preference
+            android:key="source_link"
+            android:title="@string/view_source_code"
+            android:summary="@string/view_source_code_summary">
+        <intent android:action="android.intent.action.VIEW"
+                android:data="@string/source_url"/>
+    </Preference>
+
+    <Preference
+            android:key="gpl_link"
+            android:title="@string/license"
+            android:summary="@string/license_summary">
+        <intent android:action="android.intent.action.VIEW"
+                android:data="@string/gpl_url"/>
+    </Preference>
+</PreferenceScreen>
