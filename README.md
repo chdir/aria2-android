@@ -38,9 +38,22 @@ TODO
 easy way to fix it in launcher besides using RPC to supply values during each network change
 (see above).
 
+FAQ
+==========
+
+* Why does my Lollipop Android firmware prints a message about security issues
+every time when aria2 is launched with startup logging enabled?
+
+This is an expected behavior, the solution is currently [being searched for](#1).
+
+This message is caused by specifics of x86 platform and implies, that _possible_ bugs in
+aria2 are slightly more likely be exploited by potential hackers. Fortunately aria2 is rather
+secure and constantly maintained application – it is much less likely to be exploited,
+compared to your (likely already outdated and vulnerable) device firmware.
+
 License
 ==========
-This application is licensed under GPLv3 (except for OpenSSL, which have it's own license); see
+This application is licensed under GPLv3 (except for OpenSSL, which has it's own license); see
 COPYING and license headers in individual Git submodules for details.
 
 [1]: https://github.com/dschuermann/superuser-commands

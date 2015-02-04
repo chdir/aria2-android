@@ -1,5 +1,5 @@
 <resources>
-    <style name="AppTheme" parent="Theme.AppCompat">
+    <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
         <item name="asb_switchStyle">@style/Widget.Holo.CompoundButton.Switch</item>
         <item name="asb_switchPreferenceStyle">@style/Preference.SwitchPreference</item>
     </style>
