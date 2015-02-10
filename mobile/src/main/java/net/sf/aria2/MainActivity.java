@@ -32,35 +32,175 @@
 package net.sf.aria2;
 
 import android.annotation.TargetApi;
+import android.app.Fragment;
+import android.app.FragmentManager;
 import android.content.*;
 import android.os.*;
 import android.preference.Preference;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceFragment;
 import android.preference.PreferenceScreen;
+import android.support.v4.app.NavUtils;
+import android.support.v4.app.TaskStackBuilder;
+import android.support.v7.widget.Toolbar;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.LinearLayout;
 import android.widget.Toast;
 import net.sf.aria2.util.CloseableHandler;
 import net.sf.aria2.util.SimpleResultReceiver;
 import org.jraf.android.backport.switchwidget.TwoStatePreference;
 
+import java.util.ArrayList;
 import java.util.List;
 
+import static android.os.Build.VERSION_CODES.*;
+
 public final class MainActivity extends PreferenceActivity {
+    private Iterable<Header> headers;
+    private String lastChosenFragment;
     private ServiceControl serviceControl;
 
     @Override
-    @SuppressWarnings("deprecation")
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        boolean offerUpNav;
+
         // at some point after API 11 framework begins to throw, when you use old style..
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB) {
-            addPreferencesFromResource(R.xml.preferences_aria2);
-            addPreferencesFromResource(R.xml.preferences_client);
-            addPreferencesFromResource(R.xml.preferences_misc);
-            serviceControl = new ServiceControl(this);
-            serviceControl.init(getPreferenceScreen());
+        if (Build.VERSION.SDK_INT < HONEYCOMB) {
+            initLegacyPrefs();
+            offerUpNav = false;
+        } else
+            offerUpNav = isOfferingUpNav();
+
+        final LinearLayout toolbarContainer = (LinearLayout) View.inflate(this, R.layout.activity_prefs, null);
+
+        // transplant content view children (created for us by framework)
+        final ViewGroup root = (ViewGroup) findViewById(android.R.id.content);
+        final int contentChildrenCount = root.getChildCount();
+        final List<View> childViews = new ArrayList<>(contentChildrenCount);
+
+        for (int i = 0; i < contentChildrenCount; ++i)
+            childViews.add(root.getChildAt(i));
+
+        root.removeAllViews();
+
+        for (View childView:childViews)
+            toolbarContainer.addView(childView);
+
+        root.addView(toolbarContainer);
+
+        // initialize toolbar
+        final Toolbar toolbar = (Toolbar) toolbarContainer.findViewById(R.id.toolbar);
+        toolbar.setTitle(getTitle());
+
+        if (offerUpNav) {
+            toolbar.setLogo(null);
+            toolbar.setNavigationIcon(R.drawable.abc_ic_ab_back_mtrl_am_alpha);
+            toolbar.setNavigationOnClickListener(v -> goUp());
+        } else {
+            toolbar.setNavigationIcon(null);
+            toolbar.setLogo(R.drawable.aria2_logo);
         }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        // Select the displayed fragment in the headers:
+        // This should be done by Android, it is a bug fix
+        if(headers != null)
+            reselectFragment();
+    }
+
+    @Override
+    public void onAttachFragment(Fragment fragment) {
+        super.onAttachFragment(fragment);
+
+        lastChosenFragment = fragment.getClass().getName();
+    }
+
+    @TargetApi(HONEYCOMB)
+    private void reselectFragment() {
+        final Intent intent = getIntent();
+
+        if (intent != null && intent.hasExtra(Config.EXTRA_FROM_NF)) {
+            final String displayedFragment = intent.getStringExtra(EXTRA_SHOW_FRAGMENT);
+            if (displayedFragment != null) {
+                final FragmentManager fm = getFragmentManager();
+                fm.executePendingTransactions();
+
+                if (displayedFragment.equals(lastChosenFragment))
+                    return;
+
+                final Header headerToSelect = onGetInitialHeader();
+
+                startPreferencePanel(
+                        displayedFragment,
+                        headerToSelect.fragmentArguments,
+                        headerToSelect.titleRes,
+                        headerToSelect.title,
+                        null, 0);
+            }
+        }
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+    }
+
+    @Override
+    @TargetApi(HONEYCOMB)
+    public Header onGetInitialHeader() {
+        final Intent intent = getIntent();
+
+        final String chosenHeader;
+        if (headers != null && intent != null && (chosenHeader = intent.getStringExtra(EXTRA_SHOW_FRAGMENT)) != null) {
+            for (Header h:headers) {
+                if (chosenHeader.equals(h.fragment)) {
+                    return h;
+                }
+            }
+        }
+
+        return super.onGetInitialHeader();
+    }
+
+    @TargetApi(HONEYCOMB)
+    private boolean isOfferingUpNav() {
+        // we have the Service pass extra parameter in notification Intent, because someone was too lazy
+        // to document internal workings of the PreferenceActivity
+        return (getIntent().hasExtra(Config.EXTRA_FROM_NF) || onIsHidingHeaders()) && !onIsMultiPane();
+    }
+
+    private void goUp() {
+        // this is valid exactly as long as iiner workings of PreferenceActivity remain same
+        final Intent parentIntent = new Intent(this, MainActivity.class);
+        // This would return us unresolved version instead  :(
+        //final Intent parentIntent = NavUtils.getParentActivityIntent(this);
+
+
+        // once again we have to resort to double-checking here, because someone was too lazy... you know, right?
+        // note: using addNextIntentWithParentStack (and thus addParentStack) results in hanging for some reason
+        // (confirmed on JellyBean). This is correct replacement, according to documentation :(
+        if (NavUtils.shouldUpRecreateTask(this, parentIntent) || getIntent().hasExtra(Config.EXTRA_FROM_NF)) {
+            TaskStackBuilder.create(this)
+                    .addNextIntent(parentIntent)
+                    .startActivities();
+        } else
+            NavUtils.navigateUpFromSameTask(this);
+    }
+
+    @SuppressWarnings("deprecation")
+    private void initLegacyPrefs() {
+        addPreferencesFromResource(R.xml.preferences_aria2);
+        addPreferencesFromResource(R.xml.preferences_client);
+        addPreferencesFromResource(R.xml.preferences_misc);
+        serviceControl = new ServiceControl(this);
+        serviceControl.init(getPreferenceScreen());
     }
 
     @Override
@@ -76,27 +216,30 @@ public final class MainActivity extends PreferenceActivity {
     }
 
     @Override
-    public void onBuildHeaders(List<Header> target) {
-        loadHeadersFromResource(R.xml.headers, target);
+    @TargetApi(HONEYCOMB)
+    public void onBuildHeaders(List<Header> headers) {
+        loadHeadersFromResource(R.xml.headers, headers);
+
+        this.headers = headers;
     }
 
     @Override
     protected void onStart() {
         super.onStart();
 
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB)
+        if (Build.VERSION.SDK_INT < HONEYCOMB)
             serviceControl.start();
     }
 
     @Override
     protected void onStop() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB)
+        if (Build.VERSION.SDK_INT < HONEYCOMB)
             serviceControl.stop();
 
         super.onStop();
     }
 
-    @TargetApi(Build.VERSION_CODES.HONEYCOMB)
+    @TargetApi(HONEYCOMB)
     public static class Aria2Preferences extends PreferenceFragment {
         private ServiceControl serviceControl;
 
@@ -123,7 +266,7 @@ public final class MainActivity extends PreferenceActivity {
         }
     }
 
-    @TargetApi(Build.VERSION_CODES.HONEYCOMB)
+    @TargetApi(HONEYCOMB)
     public static class FrontendPreferences  extends PreferenceFragment {
         @Override
         public void onCreate(Bundle savedInstanceState) {
@@ -132,8 +275,8 @@ public final class MainActivity extends PreferenceActivity {
         }
     }
 
-    @TargetApi(Build.VERSION_CODES.HONEYCOMB)
-    public static class MiscPreferences  extends PreferenceFragment {
+    @TargetApi(HONEYCOMB)
+    public static class MiscPreferences extends PreferenceFragment {
         @Override
         public void onCreate(Bundle savedInstanceState) {
             super.onCreate(savedInstanceState);

@@ -44,6 +44,8 @@ import java.util.List;
 final class Config extends ArrayList<String> implements Parcelable {
     private static final String EXTRA_NAME = BuildConfig.APPLICATION_ID + ".config";
 
+    // not using PreferenceActivity stuff because it's API stability is gross
+    static final String EXTRA_FROM_NF = BuildConfig.APPLICATION_ID + ".no_backstack";
     static final String EXTRA_INTERACTIVE = BuildConfig.APPLICATION_ID + ".interactive";
 
     static final String TAG = "aria2j";
