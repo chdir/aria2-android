@@ -23,9 +23,16 @@ cd jni
 (./build-c-ares.sh)
 
 export PATH="$A2_TOOLCHAIN/bin:$PATH"
+
 cd aria2
 
+# workaround for autofences behavior
+autoreconf -fvi
+autopoint -f
+
 echo "$LDFLAGS" | grep  -q  "pie"  && { export CFLAGS="-fPIE"; export A2_BIN="aria2_PIC"; } || export A2_BIN="aria2"
+
+
 
 sed -i '/\#undef EAI_ADDRFAMILY/a \#undef EAI_NODATA' src/getaddrinfo.h
 ./configure \
