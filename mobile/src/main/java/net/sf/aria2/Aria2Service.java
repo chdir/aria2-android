@@ -43,17 +43,15 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.*;
 import android.preference.PreferenceActivity;
+import android.support.annotation.Nullable;
 import android.support.v4.app.NotificationCompat;
-import android.support.v4.net.ConnectivityManagerCompat;
+import android.support.v4.app.TaskStackBuilder;
 import android.util.Log;
 import android.widget.Toast;
 import net.sf.aria2.util.SimpleResultReceiver;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.lang.Process;
-import java.nio.CharBuffer;
 import java.util.*;
 
 public final class Aria2Service extends Service {
@@ -81,9 +79,15 @@ public final class Aria2Service extends Service {
     }
 
     @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {
+    public int onStartCommand(@Nullable Intent intent, int flags, int startId) {
         if (isRunning())
             throw new IllegalStateException("Can not start aria2: running instance already exists!");
+
+        if (intent == null) {
+            Log.e("ALERT", "Deaf for good");
+            // TODO handle being restarted correctly
+            return START_NOT_STICKY;
+        }
 
         unregisterOldReceiver();
 
@@ -187,11 +191,15 @@ public final class Aria2Service extends Service {
 
     private Notification createNf() {
         @SuppressLint("InlinedApi")
-        final Intent targetIntent = new Intent(getApplicationContext(), MainActivity.class)
-                .putExtra(PreferenceActivity.EXTRA_SHOW_FRAGMENT, "net.sf.aria2.MainActivity$Aria2Preferences");
+        final Intent resultIntent = new Intent(getApplicationContext(), MainActivity.class)
+                .putExtra(PreferenceActivity.EXTRA_SHOW_FRAGMENT, "net.sf.aria2.MainActivity$Aria2Preferences")
+                .putExtra(Config.EXTRA_FROM_NF, true);
 
-        final PendingIntent contentIntent = PendingIntent.getActivity(
-                getApplicationContext(), 0, targetIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        // note: using addParentStack results in hanging for some reason (confirmed on JellyBean)
+        // there is only one activity in stack to handle up and back navigation differently
+        final TaskStackBuilder stackBuilder = TaskStackBuilder.create(getApplicationContext())
+                .addNextIntent(resultIntent);
+        final PendingIntent contentIntent = stackBuilder.getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT);
 
         return new NotificationCompat.Builder(getApplicationContext())
                 .setSmallIcon(R.drawable.ic_nf_icon)
