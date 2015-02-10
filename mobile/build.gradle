@@ -3,6 +3,9 @@ import java.util.regex.Pattern
 apply plugin: 'com.android.application'
 apply plugin: 'de.undercouch.download'
 
+def aria2Version = '1.18.9'
+def ownVersion = '0.9.0.3'
+
 android {
     compileSdkVersion 21
     buildToolsVersion "21.1.2"
@@ -11,8 +14,8 @@ android {
         applicationId "net.sf.aria2"
         minSdkVersion 9
         targetSdkVersion 21
-        versionCode 5 // bump by 3 per release
-        versionName "0.9.0.2"
+        versionCode 9 // bump by 3 per release
+        versionName "$ownVersion+upstream.$aria2Version"
     }
     splits {
         abi {
@@ -81,18 +84,19 @@ tasks.addRule("NDK tasks") { String taskName ->
         def arch
 
         switch (abi) {
-            case "x86":
-                hostName = "i686-linux-android"
+            case 'x86':
+                hostName = 'i686-linux-android'
                 toolchain = "x86-${gccVer}"
-                arch = "arch-x86"
+                arch = 'arch-x86'
                 break
-            case "armeabi":
-                hostName = "arm-linux-androideabi"
+            case 'armeabi_v7a':
+                abi = 'armeabi-v7a'
+                hostName = 'arm-linux-androideabi'
                 toolchain = "arm-linux-androideabi-${gccVer}"
-                arch = "arch-arm"
+                arch = 'arch-arm'
                 break
             default:
-                throw new UnsupportedOperationException()
+                throw new UnsupportedOperationException(abi + " not supported!")
         }
 
         def prepTask = taskName.replace("BuildAria2", "Prepare")
@@ -110,7 +114,7 @@ tasks.addRule("NDK tasks") { String taskName ->
             commandLine "$projectDir.absolutePath/jni/build-natives.sh", "$hostName", "$abi", "$toolchain", "$arch"
 
             inputs.file "$projectDir.absolutePath/jni/build-natives.sh"
-            outputs.dir abi.equals("armeabi") ? "$libsDir/armeabi-v7a" : "$libsDir/$abi"
+            outputs.dir "$libsDir/$abi"
 
             dependsOn prepTask
         }
@@ -119,7 +123,7 @@ tasks.addRule("NDK tasks") { String taskName ->
             commandLine "$projectDir.absolutePath/jni/build-natives.sh", "$hostName", "$abi", "$toolchain", "$arch"
 
             inputs.file "$projectDir.absolutePath/jni/build-natives.sh"
-            outputs.dir abi.equals("armeabi") ? "$libsDir/armeabi-v7a" : "$libsDir/$abi"
+            outputs.dir "$libsDir/$abi"
 
             dependsOn picTask
         }
@@ -129,7 +133,7 @@ tasks.addRule("NDK tasks") { String taskName ->
 import de.undercouch.gradle.tasks.download.Download
 
 task downloadArmv5binary(type: Download) {
-    src 'http://sourceforge.net/projects/aria2/files/stable/aria2-1.18.8/aria2-1.18.8-android-build1.zip'
+    src "http://sourceforge.net/projects/aria2/files/stable/aria2-$aria2Version/aria2-$aria2Version-android-build1.zip"
     dest new File(buildDir, 'armv5aria.zip')
     onlyIfNewer true
 }
@@ -154,7 +158,7 @@ task renameExecutables(type: Copy) {
     rename(/(.+)/, 'lib$1_exec.so')
 }
 
-tasks.renameExecutables.dependsOn ndkBuildAria2Abi_x86, ndkBuildAria2Abi_armeabi, downloadAndUnzipArmv5Binary
+tasks.renameExecutables.dependsOn ndkBuildAria2Abi_x86, ndkBuildAria2Abi_armeabi_v7a, downloadAndUnzipArmv5Binary
 
 //tasks.clean.dependsOn cleanRenameExecutables
 
@@ -164,23 +168,37 @@ tasks.withType(JavaCompile.class).each { JavaCompile compileTask ->
 
 import javax.swing.JFileChooser
 import javax.swing.JOptionPane
+import java.awt.HeadlessException
 
 task askForPasswords << {
-    if (!android.signingConfigs.release.storeFile.exists()) {
-        def fc = new JFileChooser(dialogTitle: 'Keystore file: ', fileSelectionMode: JFileChooser.FILES_ONLY);
-        fc.showOpenDialog();
-        def keystoreFile = fc.getSelectedFile();
 
-        android.signingConfigs.release.storeFile = keystoreFile
+    try {
+        if (!android.signingConfigs.release.storeFile.exists()) {
+            def fc = new JFileChooser(dialogTitle: 'Keystore file: ', fileSelectionMode: JFileChooser.FILES_ONLY);
+            fc.showOpenDialog();
+            def keystoreFile = fc.getSelectedFile();
+
+            android.signingConfigs.release.storeFile = keystoreFile
+        }
+
+        def readln = JOptionPane.&showInputDialog
+
+        if ('defaultKeyAlias' == android.signingConfigs.release.storePassword)
+            android.signingConfigs.release.keyAlias = readln 'Key alias: '
+
+        android.signingConfigs.release.storePassword = readln 'Keystore password: '
+        android.signingConfigs.release.keyPassword = readln 'Key password: '
+    } catch (HeadlessException graphicalDialogFailed) {
+        try {
+            def properties = new Properties()
+            properties.load(project.rootProject.file('local.properties').newDataInputStream())
+            android.signingConfigs.release.storePassword = properties.getProperty('keystore.pass')
+            android.signingConfigs.release.keyPassword = properties.getProperty('key.pass')
+        } catch (Exception ignored) {}
+
+        if (!android.signingConfigs.release.storePassword || !android.signingConfigs.release.keyPassword)
+            throw new RuntimeException("failed to read signing config from local.properties", graphicalDialogFailed)
     }
-
-    def readln = JOptionPane.&showInputDialog
-
-    if ('defaultKeyAlias' == android.signingConfigs.release.storePassword)
-        android.signingConfigs.release.keyAlias = readln 'Key alias: '
-
-    android.signingConfigs.release.storePassword = readln 'Keystore password: '
-    android.signingConfigs.release.keyPassword = readln 'Key password: '
 }
 
 tasks.whenTaskAdded { theTask ->

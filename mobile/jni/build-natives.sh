@@ -23,9 +23,16 @@ cd jni
 (./build-c-ares.sh)
 
 export PATH="$A2_TOOLCHAIN/bin:$PATH"
+
 cd aria2
 
+# workaround for autofences behavior
+autoreconf -fvi
+autopoint -f
+
 echo "$LDFLAGS" | grep  -q  "pie"  && { export CFLAGS="-fPIE"; export A2_BIN="aria2_PIC"; } || export A2_BIN="aria2"
+echo "$A2_ABI" | grep  -q  "armeabi-v7a" && CFLAGS="$CFLAGS -march=armv7-a -mfloat-abi=softfp -mfpu=vfpv3-d16"
+echo "$A2_ABI" | grep  -q  "armeabi-v7a" && LDFLAGS="$LDFLAGS -march=armv7-a -Wl,--fix-cortex-a8"
 
 sed -i '/\#undef EAI_ADDRFAMILY/a \#undef EAI_NODATA' src/getaddrinfo.h
 ./configure \
@@ -47,4 +54,8 @@ sed -i '/\#undef EAI_ADDRFAMILY/a \#undef EAI_NODATA' src/getaddrinfo.h
     ZLIB_LIBS="-lz" \
     ZLIB_CFLAGS="-I$A2_TOOLCHAIN/sysroot/usr/include"
 make clean && make
+
+# strip!
+"${A2_TOOLCHAIN}/bin/${A2_COMPILER}-strip" src/aria2c
+
 cp src/aria2c "$A2_DEST/$A2_BIN"
