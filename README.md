@@ -41,14 +41,14 @@ easy way to fix it in launcher besides using RPC to supply values during each ne
 FAQ
 ==========
 
-* Why does my Lollipop Android firmware prints a message about security issues
-every time when aria2 is launched with startup logging enabled?
+* Why does my Lollipop (aka Android 5.0) firmware prints a message about security issues
+every time when aria2 is launched?
 
-This is an expected behavior, the solution is currently [being searched for](#1).
+This is a harmless and expected behavior, the solution is currently [being searched for](#1).
 
 This message is caused by specifics of x86 platform and implies, that _possible_ bugs in
 aria2 are slightly more likely be exploited by potential hackers. Fortunately aria2 is rather
-secure and constantly maintained application – it is much less likely to be exploited,
+secure and constantly maintained application – it is much, MUCH less likely to be exploited,
 compared to your (likely already outdated and vulnerable) device firmware.
 
 License
