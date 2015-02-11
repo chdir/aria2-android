@@ -32,6 +32,8 @@ classes
 /*.log
 /logs/*
 jniLibs
+/private.gradle
+/key.p12
 
 # misc
 Thumbs.db

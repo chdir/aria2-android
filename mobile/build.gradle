@@ -3,6 +3,11 @@ import java.util.regex.Pattern
 apply plugin: 'com.android.application'
 apply plugin: 'de.undercouch.download'
 
+def userGradleScript = file("$rootProject.projectDir/private.gradle")
+if (userGradleScript.exists()) {
+    apply from: userGradleScript
+}
+
 def aria2Version = '1.18.9'
 def ownVersion = '0.9.0.3'
 
@@ -54,6 +59,8 @@ android {
         targetCompatibility JavaVersion.VERSION_1_8
     }
 }
+
+
 
 apply plugin: 'me.tatarka.retrolambda'
 
@@ -190,10 +197,8 @@ task askForPasswords << {
         android.signingConfigs.release.keyPassword = readln 'Key password: '
     } catch (HeadlessException graphicalDialogFailed) {
         try {
-            def properties = new Properties()
-            properties.load(project.rootProject.file('local.properties').newDataInputStream())
-            android.signingConfigs.release.storePassword = properties.getProperty('keystore.pass')
-            android.signingConfigs.release.keyPassword = properties.getProperty('key.pass')
+            android.signingConfigs.release.storePassword = priv.storePass
+            android.signingConfigs.release.keyPassword = priv.storeKeyPass
         } catch (Exception ignored) {}
 
         if (!android.signingConfigs.release.storePassword || !android.signingConfigs.release.keyPassword)

@@ -1,0 +1,22 @@
+This is an unofficial Android port of powerful command line BitTorrent client aria2. aria2 is a lightweight download utility – with footprint of ~4Mb and about as much of Java overhead, specific to this port. It supports everything, one expects from modern torrent downloader: selective file downloading, prioritizing chosen file segments (e.g. watching film while downloading it) and much more. See site of the desktop version for further details: http://aria2.sourceforge.net
+
+This application is NOT yet another Android remote control for desktop BitTorrent client! It embodies actual binaries of aria2, built for ARM and x86 with support for variety of Android versions, ICS and Lollipop included (if you see this text, your device is most likely supported).
+
+Note, that you DO need a frontend (e.g. remote control app) to download torrents with this port. All it does is launching aria2 binary with sensible parameters in user-friendly way; scheduling and controlling downloads have to be done by another app. For this you can choose between variety of third-party aria2 clients, developed by enthusiasts. I recommend Transdroid (free remote control app for large number of BitTorrent clients: https://play.google.com/store/apps/details?id=org.transdroid.lite), but you can also try to use one of web clients (not tested by me yet, please write me if you are able to get any results with them):
+
+* https://github.com/ziahamza/webui-aria2
+* https://github.com/binux/yaaw
+
+If you want to use one of advanced features of aria2, you can try to edit it's configuration file (named aria2.txt, stored in the same directory as downloaded files). Consult aria2 manual for additional details on the matter: http://aria2.sourceforge.net/manual/en/html/index.html
+
+If you managed to read this far (congrats!!!), please take care to report all issues with this port to Github bug tracker: https://github.com/Alexander--/aria2-android/issues. All general issues with aria2 (e.g. "I was banned from the tracker X, because of Y") should be reported to aria2 bug tracker: https://github.com/tatsuhiro-t/aria2/issues Please DO NOT complain here about bugs and missing features in aria2 frontends; instead directly contact authors of those frontends.
+
+Help to translate this project on Transifex: https://www.transifex.com/projects/p/aria2-android.
+
+Please remember, that this is free as in freedom software, entirely developed by enthusiasts.
+
+aria2 is free software, distributed under terms of GNU GPL. See https://github.com/Alexander--/aria2-android/ for a way to get the source code.
+
+"BitTorrent" is a trademark of BitTorrent Inc.
+
+Do not use this software to steal from others, use it to share!
