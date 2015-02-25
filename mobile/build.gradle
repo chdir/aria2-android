@@ -35,7 +35,7 @@ android {
             def keystorePathEnv = System.getenv('KEYSTORE')
             def keyAliasEnv = System.getenv('KEY_ALIAS')
 
-            storeFile file(keystorePathEnv?.trim() ? keystorePathEnv : 'release.keystore')
+            storeFile file(keystorePathEnv?.trim() ? keystorePathEnv : "$rootProject.projectDir/release.keystore")
             keyAlias 'alias'
 
             storePassword '***'
@@ -197,6 +197,7 @@ task askForPasswords << {
         android.signingConfigs.release.keyPassword = readln 'Key password: '
     } catch (HeadlessException graphicalDialogFailed) {
         try {
+            android.signingConfigs.release.keystoreFile = priv.storeFile
             android.signingConfigs.release.storePassword = priv.storePass
             android.signingConfigs.release.keyPassword = priv.storeKeyPass
         } catch (Exception ignored) {}
