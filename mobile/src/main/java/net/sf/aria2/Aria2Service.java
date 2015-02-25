@@ -33,6 +33,7 @@ package net.sf.aria2;
 
 import android.annotation.SuppressLint;
 import android.app.Notification;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.BroadcastReceiver;
@@ -72,7 +73,7 @@ public final class Aria2Service extends Service {
 
         link = new Binder();
 
-        reusableThread = new HandlerThread("Aria2 handler thread");
+        reusableThread = new HandlerThread("aria2 handler thread");
         reusableThread.start();
 
         bgThreadHandler = new Handler(reusableThread.getLooper());
@@ -203,18 +204,42 @@ public final class Aria2Service extends Service {
 
         return new NotificationCompat.Builder(getApplicationContext())
                 .setSmallIcon(R.drawable.ic_nf_icon)
-                .setTicker("Aria2 is running")
-                .setContentTitle("Aria2 is running")
+                .setTicker("aria2 is running")
+                .setContentTitle("aria2 is running")
                 .setContentText("Touch to open settings")
                 .setContentIntent(contentIntent)
                 .setOnlyAlertOnce(true)
                 .build();
     }
 
+    private Notification createStoppedNf(int code, boolean someTimeElapsed) {
+        final ExitCode ec = ExitCode.from(code);
+
+        final String title = someTimeElapsed ? "aria2 has stopped" : "aria2 has failed to start";
+
+        final NotificationCompat.Builder builder = new NotificationCompat.Builder(getApplicationContext())
+                .setSmallIcon(R.drawable.ic_nf_icon)
+                .setTicker(title)
+                .setContentTitle(title)
+                .setAutoCancel(true)
+                .setOnlyAlertOnce(false);
+
+        if (!ec.isSuccess())
+            builder.setContentText(someTimeElapsed ? "There may have been errors" : ec.getDesc(getResources()));
+            builder.setContentInfo('#' + ec.name());
+
+        return builder.build();
+    }
+
     private void updateNf() {
         if (bindingCounter == 0) {
-            if (isRunning())
+            if (isRunning()) {
                 startForeground(-1, createNf());
+
+                NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+
+                nm.cancel(R.id.nf_stopped);
+            }
         } else stopForeground(true);
     }
 
@@ -245,6 +270,8 @@ public final class Aria2Service extends Service {
         }
 
         public void run() {
+            long startupTime = System.currentTimeMillis();
+
             try {
                 final ProcessBuilder pBuilder = new ProcessBuilder()
                         .redirectErrorStream(true)
@@ -271,6 +298,12 @@ public final class Aria2Service extends Service {
             finally {
                 try {
                     int r = proc.waitFor();
+
+                    Notification n = createStoppedNf(r, System.currentTimeMillis() - startupTime > 500);
+
+                    NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+
+                    nm.notify(R.id.nf_stopped, n);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 } finally {
