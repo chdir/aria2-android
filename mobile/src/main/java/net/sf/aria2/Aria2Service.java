@@ -47,6 +47,7 @@ import android.preference.PreferenceActivity;
 import android.support.annotation.Nullable;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.TaskStackBuilder;
+import android.text.TextUtils;
 import android.util.Log;
 import android.widget.Toast;
 import net.sf.aria2.util.SimpleResultReceiver;
@@ -56,6 +57,8 @@ import java.lang.Process;
 import java.util.*;
 
 public final class Aria2Service extends Service {
+    private static final String TAG = "aria2service";
+
     private Binder link;
     private Handler bgThreadHandler;
     private HandlerThread reusableThread;
@@ -98,8 +101,7 @@ public final class Aria2Service extends Service {
             startAria2(Config.from(intent));
         else {
             if (intent.hasExtra(Config.EXTRA_INTERACTIVE))
-                Toast.makeText(getApplicationContext(),
-                        getText(R.string.will_start_later), Toast.LENGTH_LONG).show();
+                reportNoNetwork();
             else {
                 receiver = new BroadcastReceiver() {
                     @Override
@@ -224,11 +226,36 @@ public final class Aria2Service extends Service {
                 .setAutoCancel(true)
                 .setOnlyAlertOnce(false);
 
-        if (!ec.isSuccess())
-            builder.setContentText(someTimeElapsed ? "There may have been errors" : ec.getDesc(getResources()));
+        // TODO do something about this madness
+        if (code != 9) {
+            builder.setContentText(ec.getDesc(getResources()));
             builder.setContentInfo('#' + ec.name());
+        }
 
         return builder.build();
+    }
+
+    private void reportNoNetwork() {
+        // no binding check, because onStartCommand is called first
+        // TODO use
+        Toast.makeText(getApplicationContext(),
+                getText(R.string.will_start_later), Toast.LENGTH_LONG).show();
+    }
+
+    private void reportAria2Output(String errText) {
+        if (bindingCounter == 0)
+            return;
+
+        // https://stackoverflow.com/questions/21165802
+        errText = errText.replaceAll("(?m)(^ *| +(?= |$))", "")
+                .replaceAll("(?m)^$([\r\n]+?)(^$[\r\n]+?^)+", "$1");
+
+        final Handler niceUiThreadHandler = new Handler(Looper.getMainLooper());
+
+        final String finalText = errText.length() > 300 ?
+                                 '…' + errText.substring(errText.length() - 299, errText.length()) : errText;
+
+        niceUiThreadHandler.post(() -> Toast.makeText(getApplicationContext(), finalText, Toast.LENGTH_LONG).show());
     }
 
     private void updateNf() {
@@ -281,6 +308,8 @@ public final class Aria2Service extends Service {
 
                 pBuilder.command().add("--stop-with-process=" + android.os.Process.myPid());
 
+                Log.i(TAG, Arrays.toString(pBuilder.command().toArray()));
+
                 proc = pBuilder.start();
 
                 try (Scanner iStream = new Scanner(proc.getInputStream()).useDelimiter("\\A")) {
@@ -288,8 +317,7 @@ public final class Aria2Service extends Service {
 
                     final String errText;
                     if (iStream.hasNext() && !(errText = iStream.next()).isEmpty())
-                        new Handler(Looper.getMainLooper()).post(() -> Toast.makeText(getApplicationContext(),
-                                errText, Toast.LENGTH_LONG).show());
+                        reportAria2Output(errText);
                 }
             }
             catch (IOException tooBad) {
@@ -297,13 +325,11 @@ public final class Aria2Service extends Service {
             }
             finally {
                 try {
-                    int r = proc.waitFor();
+                    final int r = proc.waitFor();
 
-                    Notification n = createStoppedNf(r, System.currentTimeMillis() - startupTime > 500);
+                    final Notification n = createStoppedNf(r, System.currentTimeMillis() - startupTime > 500);
 
-                    NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-
-                    nm.notify(R.id.nf_stopped, n);
+                    ((NotificationManager) getSystemService(NOTIFICATION_SERVICE)).notify(R.id.nf_stopped, n);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 } finally {
