@@ -88,8 +88,8 @@ public final class Aria2Service extends Service {
             throw new IllegalStateException("Can not start aria2: running instance already exists!");
 
         if (intent == null) {
-            Log.e("ALERT", "Deaf for good");
-            // TODO handle being restarted correctly
+            stopSelf();
+
             return START_NOT_STICKY;
         }
 
