@@ -71,6 +71,7 @@ dependencies {
     compile 'com.android.support:appcompat-v7:21.0.3'
     compile 'org.jraf:android-switch-backport:1.4.0'
     compile 'com.android.support:support-v4:21.0.3'
+    compile 'com.afollestad:material-dialogs:0.6.3.1'
 }
 
 def aria2NdkTaskPattern = Pattern.compile("ndkBuildAria2Abi_(.+)");
