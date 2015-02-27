@@ -40,13 +40,17 @@ import android.preference.Preference;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceFragment;
 import android.preference.PreferenceScreen;
+import android.support.annotation.Nullable;
 import android.support.v4.app.NavUtils;
 import android.support.v4.app.TaskStackBuilder;
+import android.support.v7.app.ActionBarActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.AttributeSet;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.Toast;
+import net.sf.aria2.util.CalligraphyContextWrapper;
 import net.sf.aria2.util.CloseableHandler;
 import net.sf.aria2.util.SimpleResultReceiver;
 import org.jraf.android.backport.switchwidget.TwoStatePreference;
@@ -60,6 +64,17 @@ public final class MainActivity extends PreferenceActivity {
     private Iterable<Header> headers;
     private String lastChosenFragment;
     private ServiceControl serviceControl;
+
+    @Override
+    public View onCreateView(View parent, String name, Context context, AttributeSet attrs) {
+        return super.onCreateView(parent, name, context, attrs);
+    }
+
+    @Nullable
+    @Override
+    public View onCreateView(String name, Context context, AttributeSet attrs) {
+        return super.onCreateView(name, context, attrs);
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -237,6 +252,11 @@ public final class MainActivity extends PreferenceActivity {
             serviceControl.stop();
 
         super.onStop();
+    }
+
+    @Override
+    protected void attachBaseContext(Context newBase) {
+        super.attachBaseContext(new CalligraphyContextWrapper(newBase));
     }
 
     @TargetApi(HONEYCOMB)

@@ -5,6 +5,7 @@
     <string name="service_enable_pref">enable_aria2</string>
     <string name="off_site_pref">client_available</string>
     <string name="download_dir_pref">download_dir</string>
+    <string name="show_output_pref">show_output</string>
     <string name="rpc_secret">123</string>
     <bool name="use_multipane">false</bool>
 

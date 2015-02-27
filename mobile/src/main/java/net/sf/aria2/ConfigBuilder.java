@@ -14,12 +14,15 @@ import android.text.TextUtils;
 import java.io.File;
 
 public final class ConfigBuilder extends ContextWrapper {
+    private final SharedPreferences prefs;
+
     private File downloadDir;
 
     public ConfigBuilder(Context base) {
         super(base);
 
-        final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        prefs = PreferenceManager.getDefaultSharedPreferences(this);
+
         final String dDirPrefName = getString(R.string.download_dir_pref);
 
         String dDir = prefs.getString(dDirPrefName, "");
@@ -49,6 +52,9 @@ public final class ConfigBuilder extends ContextWrapper {
         final File sessionFile = new File(downloadDir, ".aria2.session.gz");
         ariaConfig.setSessionPath(sessionFile);
         ariaConfig.setRPCSecret(getString(R.string.rpc_secret));
+
+        final boolean showOutput = prefs.getBoolean(getString(R.string.show_output_pref), false);
+        if (!showOutput) ariaConfig.add("-q");
 
         return intent;
     }

@@ -39,4 +39,6 @@
     <string name="trunc_failed">Failed to truncate file</string>
     <string name="io_err">Input-output error</string>
     <string name="mkdir_err">Failed to create directory</string>
+    <string name="show_output">Show aria2 output</string>
+    <string name="show_output_summary">Display log when stopped</string>
 </resources>
