@@ -1,44 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- preferences -->
     <string name="enable_aria2_service">Start aria2</string>
-    <string name="official_site">Official aria2 site</string>
+    <string name="show_output">Show aria2 output</string>
+    <string name="download_dir">Download directory</string>
+    <string name="download_dir_summary">Also used for misc files</string>
+    <string name="show_output_summary">Display log when stopped</string>
     <string name="will_start_later">You need network connection to use aria2</string>
     <string name="host">Host</string>
     <string name="port">Port</string>
-    <string name="download_dir">Download directory</string>
-    <string name="download_dir_summary">Also used for misc files</string>
     <string name="download_transdroid">Download a frontend from Google Play</string>
+    <string name="official_site">Official aria2 site</string>
     <string name="license">License</string>
     <string name="view_source_code">View source code</string>
     <string name="view_source_code_summary">View source code of this port on Github</string>
     <string name="pref_header_frontend">Frontend</string>
     <string name="pref_header_other">About</string>
 
-    <!-- sounds ambiguous otherwise -->
-    <string name="secret_token" tools:ignore="MissingTranslation">
-        Secret token
-    </string>
-
-    <string name="aria2_has_stopped">aria2 has stopped</string>
-    <string name="aria2_has_failed_to_start">aria2 has failed to start</string>
+    <!-- notifications -->
     <string name="all_finished">All downloads finished</string>
     <string name="there_are_unfinished">Some downloads not finished</string>
-
-    <string name="there_may_have_been_issues">There may have been issues</string>
-    <string name="expand_nf_to_see_details">Expand notification to see details</string>
-
-    <string name="unknown_err">unknown</string>
-    <string name="invalid_arg">incorrect parameter</string>
-    <string name="netw_err">Network Error</string>
-    <string name="insuff_disc">Insufficient disc space</string>
-    <string name="other_err">There have been an error during download</string>
-    <string name="download_err">There have been a download error</string>
-    <string name="file_exists">File already exists</string>
-    <string name="rename_failed">Failed to rename file</string>
-    <string name="open_failed">Failed to open file</string>
-    <string name="trunc_failed">Failed to truncate file</string>
-    <string name="io_err">Input-output error</string>
-    <string name="mkdir_err">Failed to create directory</string>
-    <string name="show_output">Show aria2 output</string>
-    <string name="show_output_summary">Display log when stopped</string>
 </resources>
