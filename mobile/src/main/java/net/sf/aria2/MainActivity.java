@@ -50,6 +50,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.Toast;
+import net.sf.aria2.util.CalligraphyContextWrapper;
 import net.sf.aria2.util.CloseableHandler;
 import net.sf.aria2.util.SimpleResultReceiver;
 import org.jraf.android.backport.switchwidget.TwoStatePreference;
@@ -251,6 +252,11 @@ public final class MainActivity extends PreferenceActivity {
             serviceControl.stop();
 
         super.onStop();
+    }
+
+    @Override
+    protected void attachBaseContext(Context newBase) {
+        super.attachBaseContext(new CalligraphyContextWrapper(newBase));
     }
 
     @TargetApi(HONEYCOMB)
