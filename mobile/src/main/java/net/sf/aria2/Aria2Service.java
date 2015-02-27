@@ -327,9 +327,11 @@ public final class Aria2Service extends Service {
                 try {
                     final int r = proc.waitFor();
 
-                    final Notification n = createStoppedNf(r, System.currentTimeMillis() - startupTime > 500);
+                    if (properties.isShowStoppedNf()) {
+                        final Notification n = createStoppedNf(r, System.currentTimeMillis() - startupTime > 500);
 
-                    ((NotificationManager) getSystemService(NOTIFICATION_SERVICE)).notify(R.id.nf_stopped, n);
+                        ((NotificationManager) getSystemService(NOTIFICATION_SERVICE)).notify(R.id.nf_stopped, n);
+                    }
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 } finally {

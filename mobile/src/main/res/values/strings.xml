@@ -6,7 +6,11 @@
     <string name="download_dir">Download directory</string>
     <string name="download_dir_summary">Also used for misc files</string>
     <string name="show_output_summary">Display log when stopped</string>
-    <string name="will_start_later">You need network connection to use aria2</string>
+    <string name="notifications">Notifications</string>
+    <string name="nf_stopped">Notify when stopped</string>
+    <string name="nf_stopped_summary">May contain failure causes</string>
+    <string name="nf_persistent">Persistent notification</string>
+    <string name="nf_persistent_summary">Prevents frequent restarts</string>
     <string name="host">Host</string>
     <string name="port">Port</string>
     <string name="download_transdroid">Download a frontend from Google Play</string>
@@ -16,6 +20,9 @@
     <string name="view_source_code_summary">View source code of this port on Github</string>
     <string name="pref_header_frontend">Frontend</string>
     <string name="pref_header_other">About</string>
+
+    <!-- messages -->
+    <string name="will_start_later">You need network connection to use aria2</string>
 
     <!-- notifications -->
     <string name="all_finished">All downloads finished</string>

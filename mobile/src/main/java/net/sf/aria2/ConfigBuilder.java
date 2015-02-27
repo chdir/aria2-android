@@ -56,6 +56,9 @@ public final class ConfigBuilder extends ContextWrapper {
         final boolean showOutput = prefs.getBoolean(getString(R.string.show_output_pref), false);
         if (!showOutput) ariaConfig.add("-q");
 
+        final boolean showNfs = prefs.getBoolean(getString(R.string.show_nf_stopped_pref), true);
+        ariaConfig.setShowStoppedNf(showNfs);
+
         return intent;
     }
 

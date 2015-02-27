@@ -17,4 +17,19 @@
             android:key="@string/show_output_pref"
             android:title="@string/show_output"
             android:summary="@string/show_output_summary"/>
+
+    <PreferenceCategory android:title="@string/notifications">
+        <CheckBoxPreference
+                android:defaultValue="true"
+                android:key="@string/show_nf_stopped_pref"
+                android:title="@string/nf_stopped"
+                android:summary="@string/nf_stopped_summary"/>
+
+        <CheckBoxPreference
+                android:enabled="false"
+                android:defaultValue="true"
+                android:key="foobar"
+                android:title="@string/nf_persistent"
+                android:summary="@string/nf_persistent_summary"/>
+    </PreferenceCategory>
 </PreferenceScreen>

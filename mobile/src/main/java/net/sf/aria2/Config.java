@@ -50,6 +50,8 @@ final class Config extends ArrayList<String> implements Parcelable {
 
     static final String TAG = "aria2j";
 
+    private boolean showStoppedNf;
+
     public Config() {
         super(20);
         addAll(Arrays.asList(
@@ -59,6 +61,15 @@ final class Config extends ArrayList<String> implements Parcelable {
                 "--rpc-allow-origin-all=true",
                 "--rpc-save-upload-metadata=true",
                 "--save-session-interval=10"));
+    }
+
+    public Config setShowStoppedNf(boolean showStoppedNf) {
+        this.showStoppedNf = showStoppedNf;
+        return this;
+    }
+
+    public boolean isShowStoppedNf() {
+        return showStoppedNf;
     }
 
     @SuppressWarnings("unchecked")
@@ -120,12 +131,14 @@ final class Config extends ArrayList<String> implements Parcelable {
     @Override
     public void writeToParcel(Parcel dest, int flags) {
         dest.writeArray(toArray());
+        dest.writeValue(showStoppedNf);
     }
 
     public static final Parcelable.Creator<Config> CREATOR = new Creator<Config>() {
         @Override
         public Config createFromParcel(Parcel source) {
-            return new Config(Arrays.asList(source.readArray(getClass().getClassLoader())));
+            return new Config(Arrays.asList(source.readArray(getClass().getClassLoader())))
+                    .setShowStoppedNf((Boolean) source.readValue(null));
         }
 
         @Override
