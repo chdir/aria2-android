@@ -57,6 +57,7 @@ final class Config extends ArrayList<String> implements Parcelable {
         addAll(Arrays.asList(
                 "-c", "--enable-rpc", "--referer=*",
                 "--enable-color=false",
+                "--summary-interval=0",
                 "--bt-save-metadata=true",
                 "--rpc-allow-origin-all=true",
                 "--rpc-save-upload-metadata=true",
