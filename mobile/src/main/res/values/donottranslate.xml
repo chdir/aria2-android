@@ -4,22 +4,14 @@
     <string name="secret_token">Secret token</string>
 
     <!-- I hope to translate/use these someday, but moved them here to  shut up Lint -->
-    <string name="aria2_has_stopped">aria2 has stopped</string>
-    <string name="aria2_has_failed_to_start">aria2 has failed to start</string>
-
-    <string name="there_may_have_been_issues">There may have been issues</string>
-    <string name="expand_nf_to_see_details">Expand notification to see details</string>
-
-    <string name="unknown_err">unknown</string>
+    <string name="unknown_err">unknown error</string>
     <string name="invalid_arg">incorrect parameter</string>
-    <string name="netw_err">Network Error</string>
-    <string name="insuff_disc">Insufficient disc space</string>
-    <string name="other_err">There have been an error during download</string>
-    <string name="download_err">There have been a download error</string>
-    <string name="file_exists">File already exists</string>
-    <string name="rename_failed">Failed to rename file</string>
-    <string name="open_failed">Failed to open file</string>
-    <string name="trunc_failed">Failed to truncate file</string>
-    <string name="io_err">Input-output error</string>
-    <string name="mkdir_err">Failed to create directory</string>
+    <string name="netw_err">network error</string>
+    <string name="insuff_disc">insufficient disc space</string>
+    <string name="file_exists">file already exists</string>
+    <string name="rename_failed">failed to rename file</string>
+    <string name="open_failed">failed to open file</string>
+    <string name="trunc_failed">failed to truncate file</string>
+    <string name="io_err">input-output error</string>
+    <string name="mkdir_err">failed to create a directory</string>
 </resources>

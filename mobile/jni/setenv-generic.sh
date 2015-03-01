@@ -7,7 +7,7 @@ _ANDROID_EABI="$A2_GCC"
 
 _ANDROID_ARCH="$A2_ARCH"
 
-_ANDROID_API="android-15"
+_ANDROID_API="android-9"
 
 #####################################################################
 
@@ -93,7 +93,10 @@ case $_ANDROID_ARCH in
 	  ;;
 	arch-x86)	  
       ANDROID_TOOLS="i686-linux-android-gcc i686-linux-android-ranlib i686-linux-android-ld"
-	  ;;	  
+	  ;;
+	arch-x86)
+      ANDROID_TOOLS="mipsel-linux-android-gcc mipsel-linux-android-ranlib mipsel-linux-android-ld"
+      ;;
 	*)
 	  echo "ERROR ERROR ERROR"
 	  ;;
@@ -132,21 +135,6 @@ fi
 
 #####################################################################
 
-# Most of these should be OK (MACHINE, SYSTEM, ARCH). RELEASE is ignored.
-export MACHINE=armv7
-export RELEASE=2.6.37
-export SYSTEM=android
-export ARCH=arm
-export CROSS_COMPILE="arm-linux-androideabi-"
-
-if [ "$_ANDROID_ARCH" == "arch-x86" ]; then
-	export MACHINE=i686
-	export RELEASE=2.6.37
-	export SYSTEM=android
-	export ARCH=x86
-	export CROSS_COMPILE="i686-linux-android-"
-fi
-
 # For the Android toolchain
 # https://android.googlesource.com/platform/ndk/+/ics-mr0/docs/STANDALONE-TOOLCHAIN.html
 export ANDROID_SYSROOT="$ANDROID_NDK_ROOT/platforms/$_ANDROID_API/$_ANDROID_ARCH"
@@ -160,15 +148,22 @@ export ANDROID_API="$_ANDROID_API"
 export ANDROID_DEV="$ANDROID_NDK_ROOT/platforms/$_ANDROID_API/$_ANDROID_ARCH/usr"
 export HOSTCC=gcc
 
-VERBOSE=1
-if [ ! -z "$VERBOSE" ] && [ "$VERBOSE" != "0" ]; then
-  echo "ANDROID_NDK_ROOT: $ANDROID_NDK_ROOT"
-  echo "ANDROID_ARCH: $_ANDROID_ARCH"
-  echo "ANDROID_EABI: $_ANDROID_EABI"
-  echo "ANDROID_API: $ANDROID_API"
-  echo "ANDROID_SYSROOT: $ANDROID_SYSROOT"
-  echo "ANDROID_TOOLCHAIN: $ANDROID_TOOLCHAIN"
-  echo "FIPS_SIG: $FIPS_SIG"
-  echo "CROSS_COMPILE: $CROSS_COMPILE"
-  echo "ANDROID_DEV: $ANDROID_DEV"
+# Most of these should be OK (MACHINE, SYSTEM, ARCH). RELEASE is ignored.
+
+export SYSTEM=android
+
+export RELEASE=2.6.37
+
+if [ "$_ANDROID_ARCH" == "arch-x86" ]; then
+	export MACHINE=i686
+	export ARCH=x86
+	export CROSS_COMPILE="i686-linux-android-"
+elif [ "$_ANDROID_ARCH" == "arch-mips" ]; then
+	export MACHINE=mipsel
+	export ARCH=mips
+	export CROSS_COMPILE="mipsel-linux-android-"
+else
+    export MACHINE=armv7
+    export ARCH=arm
+    export CROSS_COMPILE="arm-linux-androideabi-"
 fi

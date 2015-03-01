@@ -25,6 +25,18 @@
     <string name="will_start_later">You need network connection to use aria2</string>
 
     <!-- notifications -->
+    <string name="aria2_has_stopped">aria2 has stopped</string>
+    <string name="aria2_has_failed_to_start">aria2 has failed to start</string>
+
     <string name="all_finished">All downloads finished</string>
     <string name="there_are_unfinished">Some downloads not finished</string>
+    <string name="there_may_have_been_issues">There may have been issues</string>
+    <string name="expand_nf_to_see_details">Expand notification to see details</string>
+
+    <string name="other_err">an error when adding download</string>
+    <string name="download_err">an error during download</string>
+    <string name="explanation">
+        aria2 has encountered one or more issues during this session. The last one reported back was: %s. You may try
+        to look at your frontend for details.
+    </string>
 </resources>

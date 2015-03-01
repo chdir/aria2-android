@@ -58,4 +58,4 @@ make clean && make
 # strip!
 "${A2_TOOLCHAIN}/bin/${A2_COMPILER}-strip" src/aria2c
 
-cp src/aria2c "$A2_DEST/$A2_BIN"
+install -D src/aria2c "$A2_DEST/$A2_BIN"

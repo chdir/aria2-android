@@ -41,8 +41,18 @@ easy way to fix it in launcher besides using RPC to supply values during each ne
 FAQ
 ==========
 
-* Why does my Lollipop (aka Android 5.0) firmware prints a message about security issues
-every time when aria2 is launched?
+* Why does aria2 sometimes display misleading status ("there may have been errors") in notifications?
+
+When aria2 (or any other Android application) dies from signal (gets killed by systems etc.), it's
+exit code (that contains information about last error) may be replaced by some rubbish.
+This should not _normally_ happen during casual execution, but may occur when something in the system
+kills aria2 process or because of (virtually nonexistent) bugs in aria2 itself. One tough example of
+former, is when aria2 process takes it's time to stop current downloads, "stop aria2" switch times out,
+and the user hits said switch again, killing aria2 process for good. There is no way to understand if
+everything was really okay in this case.
+
+* Why does Lollipop (aka Android 5.0) firmware prints a message about security issues when aria2 is started
+with output logging on?
 
 This is a harmless and expected behavior, the solution is currently [being searched for](#1).
 

@@ -52,6 +52,9 @@ import android.util.Log;
 import android.widget.Toast;
 import net.sf.aria2.util.SimpleResultReceiver;
 
+import java.io.Closeable;
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.Process;
 import java.util.*;
@@ -217,7 +220,9 @@ public final class Aria2Service extends Service {
     private Notification createStoppedNf(int code, boolean someTimeElapsed) {
         final ExitCode ec = ExitCode.from(code);
 
-        final String title = someTimeElapsed ? "aria2 has stopped" : "aria2 has failed to start";
+        final String title = someTimeElapsed
+                             ? getString(R.string.aria2_has_stopped)
+                             : getString(R.string.aria2_has_failed_to_start);
 
         final NotificationCompat.Builder builder = new NotificationCompat.Builder(getApplicationContext())
                 .setSmallIcon(R.drawable.ic_nf_icon)
@@ -226,10 +231,27 @@ public final class Aria2Service extends Service {
                 .setAutoCancel(true)
                 .setOnlyAlertOnce(false);
 
-        // TODO do something about this madness
-        if (code != 9) {
-            builder.setContentText(ec.getDesc(getResources()));
-            builder.setContentInfo('#' + ec.name());
+        final String errText = ec.getDesc(getResources());
+
+        if (ec.isSuccess()) {
+            builder.setContentText(errText);
+        } else {
+            if (someTimeElapsed) {
+                builder.setContentText(getString(R.string.there_may_have_been_issues));
+
+                if (lastInvocation.killedForcefully)
+                    builder.setNumber(ec.getCode());
+                else {
+                    builder.setContentInfo('#' + ec.name())
+                            .setSubText(getString(R.string.expand_nf_to_see_details))
+                            .setStyle(new NotificationCompat.BigTextStyle().bigText(
+                                    getString(R.string.explanation, errText)));
+                }
+            } else  {
+                builder.setContentInfo('#' + ec.name())
+                        .setContentText(Character.toUpperCase(errText.charAt(0))
+                                + errText.substring(1));
+            }
         }
 
         return builder.build();
@@ -288,23 +310,55 @@ public final class Aria2Service extends Service {
     }
 
     private final class AriaRunnable implements Runnable {
+        private static final String PIDFILE = "aria2.pid";
+
         private final Config properties;
 
+        private volatile int pid;
         private volatile Process proc;
+
+        private boolean killedForcefully;
+        private long startupTime;
 
         public AriaRunnable(Config properties) {
             this.properties = properties;
         }
 
         public void run() {
-            long startupTime = System.currentTimeMillis();
+            startupTime = System.currentTimeMillis();
 
-            try {
+            final File aria2dir = getFilesDir();
+
+            final File aria2pid = new File(aria2dir, PIDFILE);
+
+            final FileObserver fileObserver = new FileObserver(aria2dir.getAbsolutePath(), FileObserver.CLOSE_WRITE) {
+                @Override
+                public void onEvent(int event, String path) {
+                    if (PIDFILE.equals(path)) {
+                        try (Scanner iStream = new Scanner(aria2pid)) {
+                            if (iStream.hasNextInt())
+                                pid = iStream.nextInt();
+                        } catch (FileNotFoundException e) {
+                            // can not be helped, will resort to other means
+                            // of killing the process
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            };
+
+            try (Closeable cleanup = fileObserver::stopWatching) {
+                fileObserver.startWatching();
+
+                if (aria2pid.exists() && !aria2pid.delete())
+                    throw new IOException("Failed to remove stale aria2 PID file");
+
                 final ProcessBuilder pBuilder = new ProcessBuilder()
                         .redirectErrorStream(true)
-                        .command(properties);
+                        .command(properties)
+                        .directory(aria2dir);
 
-                pBuilder.environment().put("HOME", getFilesDir().getAbsolutePath());
+                pBuilder.environment().put("HOME", aria2dir.getAbsolutePath());
 
                 pBuilder.command().add("--stop-with-process=" + android.os.Process.myPid());
 
@@ -316,7 +370,8 @@ public final class Aria2Service extends Service {
                     sendResult(true);
 
                     final String errText;
-                    if (iStream.hasNext() && !(errText = iStream.next()).isEmpty())
+                    if (iStream.hasNext() && !(errText = iStream.next()).isEmpty() &&
+                            (!didSomeWork() || !properties.contains("-q")))
                         reportAria2Output(errText);
                 }
             }
@@ -328,7 +383,7 @@ public final class Aria2Service extends Service {
                     final int r = proc.waitFor();
 
                     if (properties.isShowStoppedNf()) {
-                        final Notification n = createStoppedNf(r, System.currentTimeMillis() - startupTime > 500);
+                        final Notification n = createStoppedNf(r, didSomeWork());
 
                         ((NotificationManager) getSystemService(NOTIFICATION_SERVICE)).notify(R.id.nf_stopped, n);
                     }
@@ -346,12 +401,22 @@ public final class Aria2Service extends Service {
             }
         }
 
+        private boolean didSomeWork() {
+            return System.currentTimeMillis() - startupTime > 500;
+        }
+
         boolean isRunning() {
             return proc != null;
         }
 
-        public void stop() {
-            proc.destroy();
+        void stop() {
+            if (pid > 1) {
+                android.os.Process.sendSignal(pid, 2); // SIGINT
+                pid = -1;
+            } else {
+                killedForcefully = true;
+                proc.destroy();
+            }
         }
     }
 }
