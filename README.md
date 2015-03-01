@@ -28,6 +28,9 @@ the process in one click. This project attempts to fix those issues.
 
 Current state
 ==========
+
+[![Download from Sourceforge](https://img.shields.io/sourceforge/dt/aria2-android.svg)](http://sf.net/p/aria2-android/get/)
+
 This port is generally usable, but some convenient features (such as ability to change default
 aria2 arguments) are missing. Stay tuned with development!
 
