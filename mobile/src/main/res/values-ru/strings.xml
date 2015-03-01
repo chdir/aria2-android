@@ -23,6 +23,14 @@
   <!--messages-->
   <string name="will_start_later">Для работы aria2 требуется сетевое подключение</string>
   <!--notifications-->
+  <string name="aria2_has_stopped">Процесс aria2 завершен</string>
+  <string name="aria2_has_failed_to_start">Запустить aria2 не удалось</string>
   <string name="all_finished">Загрузки завершены</string>
   <string name="there_are_unfinished">Загрузки в процессе</string>
+  <string name="there_may_have_been_issues">В ходе работы могли возникнуть проблемы</string>
+  <string name="expand_nf_to_see_details">Подробности — в развернутом уведомлении</string>
+  <string name="other_err">ошибка при добавлении загрузки</string>
+  <string name="download_err">ошибка в ходе загрузки</string>
+  <string name="explanation">
+В ходе работы aria2 могли возникнуть одна и более проблем. Последняя из них: %s. Вы можете воспользоваться фронтендом для более детального отчёта.</string>
 </resources>
