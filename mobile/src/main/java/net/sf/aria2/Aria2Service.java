@@ -36,28 +36,27 @@ import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
+import android.content.*;
+import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.*;
+import android.os.Process;
 import android.preference.PreferenceActivity;
 import android.support.annotation.Nullable;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.TaskStackBuilder;
-import android.text.TextUtils;
 import android.util.Log;
 import android.widget.Toast;
+import jackpal.androidterm.TermExec;
+import jackpal.androidterm.libtermexec.v1.ITerminal;
 import net.sf.aria2.util.SimpleResultReceiver;
 
-import java.io.Closeable;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.lang.Process;
 import java.util.*;
+import java.util.concurrent.CountDownLatch;
 
 public final class Aria2Service extends Service {
     private static final String TAG = "aria2service";
@@ -310,53 +309,31 @@ public final class Aria2Service extends Service {
     }
 
     private final class AriaRunnable implements Runnable {
-        private static final String PIDFILE = "aria2.pid";
-
         private final Config properties;
 
         private volatile int pid;
-        private volatile Process proc;
+        private volatile TermConnection conn;
+
+        // TODO
+        private volatile boolean delegateDisplay;
 
         private boolean killedForcefully;
         private long startupTime;
 
         public AriaRunnable(Config properties) {
             this.properties = properties;
+
+            delegateDisplay = properties.isUseATE();
         }
 
         public void run() {
             startupTime = System.currentTimeMillis();
 
             final File aria2dir = getFilesDir();
+            final File ptmxFile = new File("/dev/ptmx");
 
-            final File aria2pid = new File(aria2dir, PIDFILE);
-
-            final FileObserver fileObserver = new FileObserver(aria2dir.getAbsolutePath(), FileObserver.CLOSE_WRITE) {
-                @Override
-                public void onEvent(int event, String path) {
-                    if (PIDFILE.equals(path)) {
-                        try (Scanner iStream = new Scanner(aria2pid)) {
-                            if (iStream.hasNextInt())
-                                pid = iStream.nextInt();
-                        } catch (FileNotFoundException e) {
-                            // can not be helped, will resort to other means
-                            // of killing the process
-                            e.printStackTrace();
-                        }
-                    }
-                }
-            };
-
-            try (Closeable cleanup = fileObserver::stopWatching) {
-                fileObserver.startWatching();
-
-                if (aria2pid.exists() && !aria2pid.delete())
-                    throw new IOException("Failed to remove stale aria2 PID file");
-
-                final ProcessBuilder pBuilder = new ProcessBuilder()
-                        .redirectErrorStream(true)
-                        .command(properties)
-                        .directory(aria2dir);
+            try (ParcelFileDescriptor ptmx = ParcelFileDescriptor.open(ptmxFile, ParcelFileDescriptor.MODE_READ_WRITE)) {
+                final TermExec pBuilder = new TermExec(properties);
 
                 pBuilder.environment().put("HOME", aria2dir.getAbsolutePath());
 
@@ -364,11 +341,21 @@ public final class Aria2Service extends Service {
 
                 Log.i(TAG, Arrays.toString(pBuilder.command().toArray()));
 
-                proc = pBuilder.start();
+                pid = pBuilder.start(ptmx);
 
-                try (Scanner iStream = new Scanner(proc.getInputStream()).useDelimiter("\\A")) {
-                    sendResult(true);
+                sendResult(true);
 
+                if (delegateDisplay) {
+                    conn = rebind(ptmx);
+
+                    if (conn != null) {
+                        synchronized (conn.fightLeaks) {
+                            conn.fightLeaks.wait();
+                        }
+                    }
+                }
+
+                try (Scanner iStream = new Scanner(new ParcelFileDescriptor.AutoCloseInputStream(ptmx)).useDelimiter("\\A")) {
                     final String errText;
                     if (iStream.hasNext() && !(errText = iStream.next()).isEmpty() &&
                             (!didSomeWork() || !properties.contains("-q")))
@@ -377,27 +364,131 @@ public final class Aria2Service extends Service {
             }
             catch (IOException tooBad) {
                 Log.e(Config.TAG, tooBad.getLocalizedMessage());
-            }
-            finally {
-                try {
-                    final int r = proc.waitFor();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+
+                // we have been interrupted, as the child to cleanup after himself
+
+                Process.sendSignal(pid, 15); // SIGTERM
+            } finally {
+                if (pid > 1) {
+                    final int r = TermExec.waitFor(pid);
+
+                    pid = -1;
 
                     if (properties.isShowStoppedNf()) {
                         final Notification n = createStoppedNf(r, didSomeWork());
 
                         ((NotificationManager) getSystemService(NOTIFICATION_SERVICE)).notify(R.id.nf_stopped, n);
                     }
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                } finally {
-                    proc = null;
-
-                    stopSelf();
-
-                    sendResult(false);
-
-                    lastInvocation = null;
                 }
+
+                stopSelf();
+
+                sendResult(false);
+
+                lastInvocation = null;
+            }
+        }
+
+        private TermConnection rebind(ParcelFileDescriptor ptmx) {
+            final PackageManager pm = getPackageManager();
+
+            final Intent i = new Intent()
+                    .setAction(TermExec.SERVICE_ACTION_V1);
+
+            final ResolveInfo ri = pm.resolveService(i, 0);
+
+            if (ri == null || ri.serviceInfo == null)
+                return null;
+
+            final ComponentName component = new ComponentName(ri.serviceInfo.packageName, ri.serviceInfo.name);
+
+            i.setComponent(component);
+
+            final TermConnection connection = new TermConnection(getApplicationContext(), ptmx);
+
+            // BIND_AUTO_CREATE ensures, that target Service won't die, when we unbind
+            // (see also https://stackoverflow.com/q/10676204)
+            //
+            // Context.BIND_WAIVE_PRIORITY may be used to prevent unnecessary priority gains
+            // (see also https://stackoverflow.com/q/6645193)
+            boolean bindingInitiated = bindService(i, connection, Context.BIND_AUTO_CREATE);
+
+            if (bindingInitiated)
+                return connection;
+            else {
+                // this can imply one of two things:
+                // 1) Supplied ComponentName is invalid (or have become invalid very recently)
+                // 2) The implementation of service refused to communicate with us, for example,
+                // because it banned us from further attempts, or because it knows, that our
+                // terminal end is no longer valid etc.
+                //
+                // returning a number here would be dangerously misleading, so let's throw the most
+                // harmless checked Exception available
+
+                return null;
+            }
+        }
+
+        private class TermConnection implements ServiceConnection {
+            final Object fightLeaks = new Object();
+
+            private final ParcelFileDescriptor ptmx;
+            private final Context context;
+
+            private boolean lastConnectionMade;
+            private boolean closed;
+
+            private TermConnection(Context context, ParcelFileDescriptor ptmx) {
+                this.context = context;
+                this.ptmx = ptmx;
+            }
+
+            @Override
+            public void onServiceConnected(ComponentName name, IBinder service) {
+                try {
+                    ITerminal it = ITerminal.Stub.asInterface(service);
+
+                    it.startSession(ptmx, new ResultReceiver(new Handler(Looper.getMainLooper())) {
+                        @Override
+                        protected void onReceiveResult(int resultCode, Bundle resultData) {
+                            release();
+                        }
+                    });
+
+                    lastConnectionMade = true;
+                } catch (RemoteException e) {
+                    release();
+                }
+            }
+
+            // would likely happen when Android decides to kill spawned Terminal Service
+            @Override
+            public void onServiceDisconnected(ComponentName name) {
+                if (lastConnectionMade)
+                    lastConnectionMade = false;
+                else
+                    release();
+            }
+
+            private void release() {
+                if (closed)
+                    return;
+
+                try {
+                    context.unbindService(this);
+
+                    Log.e("Ouch!", "Unbound succesfully");
+                } catch (Throwable dianneYou) {
+                    Log.e("AARGH!", "Unbound succesfully w/error: " + dianneYou.getLocalizedMessage());
+                }
+
+                synchronized (fightLeaks) {
+                    fightLeaks.notify();
+                }
+
+                closed = true;
             }
         }
 
@@ -406,16 +497,25 @@ public final class Aria2Service extends Service {
         }
 
         boolean isRunning() {
-            return proc != null;
+            return pid > 1;
         }
 
         void stop() {
             if (pid > 1) {
-                android.os.Process.sendSignal(pid, 2); // SIGINT
-                pid = -1;
-            } else {
-                killedForcefully = true;
-                proc.destroy();
+                if (conn != null || !delegateDisplay) {
+                    if (conn != null)
+                        conn.release();
+
+                    conn = null;
+                    delegateDisplay = true; // uhhh...
+
+                    Process.sendSignal(pid, 2); // SIGINT
+                } else {
+                    killedForcefully = true;
+                    pid = -1;
+
+                    Process.sendSignal(pid, Process.SIGNAL_KILL);
+                }
             }
         }
     }

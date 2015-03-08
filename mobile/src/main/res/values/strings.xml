@@ -39,4 +39,8 @@
         aria2 has encountered one or more issues during this session. The last one reported back was: %s. You may try
         to look at your frontend for details.
     </string>
+    <string name="use_ate_title">ATE integration</string>
+    <string name="use_ate_summary">Open aria2 in Android Terminal Emulator</string>
+    <string name="ate">Terminal Emulator</string>
+    <string name="download_ate">Download ATE from Google Play</string>
 </resources>

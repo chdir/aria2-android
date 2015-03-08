@@ -10,3 +10,6 @@
 	path = mobile/jni/aria2
 	url = https://github.com/tatsuhiro-t/aria2.git
 	ignore = dirty
+[submodule "ate"]
+	path = ate
+	url = git@github.com:Alexander--/Android-Terminal-Emulator.git

@@ -1,1 +1,3 @@
-include ':mobile'
+include ':mobile', ':libtermexec'
+
+project(':libtermexec').projectDir = new File(rootDir, 'ate/libtermexec')

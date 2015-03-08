@@ -84,12 +84,19 @@ public final class ConfigBuilder extends ContextWrapper {
         ariaConfig.setSessionPath(sessionFile);
         ariaConfig.setRPCSecret(getString(R.string.rpc_secret));
 
+        final boolean showNfs = prefs.getBoolean(getString(R.string.show_nf_stopped_pref), true);
+        ariaConfig.setShowStoppedNf(showNfs);
+
+        final boolean useATE = prefs.getBoolean(getString(R.string.use_ate_pref), false);
+        ariaConfig.setUseATE(useATE);
+
         final boolean showOutput = prefs.getBoolean(getString(R.string.show_output_pref), false);
         if (!showOutput) ariaConfig.add("-q");
         ariaConfig.add("--show-console-readout=" + showOutput);
 
-        final boolean showNfs = prefs.getBoolean(getString(R.string.show_nf_stopped_pref), true);
-        ariaConfig.setShowStoppedNf(showNfs);
+        if (!useATE) {
+            ariaConfig.add("--summary-interval=0");
+        }
 
         return intent;
     }

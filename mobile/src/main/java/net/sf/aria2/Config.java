@@ -52,12 +52,13 @@ final class Config extends ArrayList<String> implements Parcelable {
 
     private boolean showStoppedNf;
 
+    private boolean useATE;
+
     public Config() {
         super(20);
         addAll(Arrays.asList(
                 "-c", "--enable-rpc", "--referer=*",
                 "--enable-color=false",
-                "--summary-interval=0",
                 "--bt-save-metadata=true",
                 "--rpc-allow-origin-all=true",
                 "--rpc-save-upload-metadata=true",
@@ -69,8 +70,17 @@ final class Config extends ArrayList<String> implements Parcelable {
         return this;
     }
 
+    public Config setUseATE(boolean useATE) {
+        this.useATE = useATE;
+        return this;
+    }
+
     public boolean isShowStoppedNf() {
         return showStoppedNf;
+    }
+
+    public boolean isUseATE() {
+        return useATE;
     }
 
     @SuppressWarnings("unchecked")
@@ -133,13 +143,14 @@ final class Config extends ArrayList<String> implements Parcelable {
     public void writeToParcel(Parcel dest, int flags) {
         dest.writeArray(toArray());
         dest.writeValue(showStoppedNf);
+        dest.writeValue(useATE);
     }
 
     public static final Parcelable.Creator<Config> CREATOR = new Creator<Config>() {
         @Override
         public Config createFromParcel(Parcel source) {
             return new Config(Arrays.asList(source.readArray(getClass().getClassLoader())))
-                    .setShowStoppedNf((Boolean) source.readValue(null));
+                    .setShowStoppedNf((Boolean) source.readValue(null)).setUseATE((Boolean) source.readValue(null));
         }
 
         @Override

@@ -22,4 +22,18 @@
             android:key="token"
             android:title="@string/secret_token"
             android:summary="@string/rpc_secret"/>
+
+    <Preference
+            android:key="ate"
+            android:title="@string/ate"
+            android:summary="@string/download_ate">
+        <intent android:action="android.intent.action.VIEW"
+                android:data="@string/ate_link"/>
+    </Preference>
+
+    <CheckBoxPreference
+            android:key="@string/use_ate_pref"
+            android:title="@string/use_ate_title"
+            android:summary="@string/use_ate_summary"
+            android:defaultValue="false"/>
 </PreferenceScreen>
