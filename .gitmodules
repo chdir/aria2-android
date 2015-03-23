@@ -12,4 +12,4 @@
 	ignore = dirty
 [submodule "ate"]
 	path = ate
-	url = git@github.com:Alexander--/Android-Terminal-Emulator.git
+	url = git@github.com:jackpal/Android-Terminal-Emulator.git

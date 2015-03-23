@@ -10,7 +10,7 @@ export A2_TOOLCHAIN=$(realpath build/toolchain/$A2_ABI)
 export A2_OPENSSL=$(realpath jni/openssl)
 export A2_CARES=$(realpath jni/c-ares)
 
-mkdir -p build/native-libs libs/$A2_ABI
+mkdir -p build/native-libs libs/$A2_ABI src/main/jniLibs/$A2_ABI
 
 export A2_ROOT=$(realpath build/native-libs)
 
@@ -27,10 +27,12 @@ export PATH="$A2_TOOLCHAIN/bin:$PATH"
 cd aria2
 
 # workaround for autofences behavior
+sed -i "s/AM_GNU_GETTEXT_VERSION(\[0\.18])/AM_GNU_GETTEXT_VERSION([0.19])/g" configure.ac
 autoreconf -fvi
-autopoint -f
+#autopoint -f
 
-echo "$LDFLAGS" | grep  -q  "pie"  && { export CFLAGS="-fPIE"; export A2_BIN="aria2_PIC"; } || export A2_BIN="aria2"
+export CFLAGS="-pipe"
+echo "$LDFLAGS" | grep  -q  "pie"  && { export CFLAGS="$CFLAGS -fPIE"; export A2_BIN="aria2_PIC"; } || export A2_BIN="aria2"
 echo "$A2_ABI" | grep  -q  "armeabi-v7a" && CFLAGS="$CFLAGS -march=armv7-a -mfloat-abi=softfp -mfpu=vfpv3-d16"
 echo "$A2_ABI" | grep  -q  "armeabi-v7a" && LDFLAGS="$LDFLAGS -march=armv7-a -Wl,--fix-cortex-a8"
 

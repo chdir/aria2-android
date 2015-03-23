@@ -3,7 +3,9 @@
 pushd c-ares
 declare -rx VERSION=1.9.0
 declare -rx PACKAGE_VERSION=1.9.0
-echo "$LDFLAGS" | grep  -q  "pie"  && export CFLAGS="-fPIC"
+
+export CFLAGS="-pipe"
+echo "$LDFLAGS" | grep  -q  "pie"  && export CFLAGS="$CFLAGS -fPIC"
 echo "$A2_ABI" | grep  -q  "armeabi-v7a" && CFLAGS="$CFLAGS -march=armv7-a -mfloat-abi=softfp -mfpu=vfpv3-d16"
 echo "$A2_ABI" | grep  -q  "armeabi-v7a" && LDFLAGS="$LDFLAGS -march=armv7-a -Wl,--fix-cortex-a8"
 
