@@ -13,7 +13,7 @@
   <string name="nf_persistent_summary">Требуется для сохранения процесса в фоне</string>
   <string name="host">Хост</string>
   <string name="port">Порт</string>
-  <string name="download_transdroid">Скачать фронтенд из Google Play</string>
+  <string name="get_from_market">Скачать фронтенд из Google Play</string>
   <string name="official_site">Сайт aria2 (англ.)</string>
   <string name="license">Лицензия</string>
   <string name="view_source_code">Исходный код</string>

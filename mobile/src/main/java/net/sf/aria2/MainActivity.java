@@ -32,10 +32,7 @@
 package net.sf.aria2;
 
 import android.annotation.TargetApi;
-import android.app.Fragment;
-import android.app.FragmentManager;
-import android.app.Notification;
-import android.app.NotificationManager;
+import android.app.*;
 import android.content.*;
 import android.os.*;
 import android.preference.Preference;
@@ -45,7 +42,6 @@ import android.preference.PreferenceScreen;
 import android.support.annotation.Nullable;
 import android.support.v4.app.NavUtils;
 import android.support.v4.app.TaskStackBuilder;
-import android.support.v7.app.ActionBarActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.AttributeSet;
 import android.view.View;
@@ -289,12 +285,62 @@ public final class MainActivity extends PreferenceActivity {
     }
 
     @TargetApi(HONEYCOMB)
-    public static class FrontendPreferences  extends PreferenceFragment {
+    public static class FrontendPreferences extends PreferenceFragment implements LoaderManager.LoaderCallbacks<Bundle> {
+        private Preference atePref;
+        private Preference useAtePref;
+        private Preference trnsdroidPref;
+
         @Override
         public void onCreate(Bundle savedInstanceState) {
             super.onCreate(savedInstanceState);
             addPreferencesFromResource(R.xml.preferences_client);
+
+            useAtePref = findPreference(getString(R.string.use_ate_pref));
+            atePref = findPreference(getString(R.string.ate_app_pref));
+            trnsdroidPref = findPreference(getString(R.string.transdroid_app_pref));
+
+            atePref.setEnabled(false);
+            trnsdroidPref.setEnabled(false);
+            useAtePref.setEnabled(false);
         }
+
+        @Override
+        public void onActivityCreated(Bundle savedInstanceState) {
+            super.onActivityCreated(savedInstanceState);
+
+            getLoaderManager().initLoader(R.id.ldr_frontends, new Bundle(), this);
+        }
+
+        @Override
+        public Loader<Bundle> onCreateLoader(int id, Bundle args) {
+            return new ApplicationLoader(getActivity());
+        }
+
+        @Override
+        public void onLoadFinished(Loader<Bundle> loader, Bundle data) {
+            Intent transdroidIntent = data.getParcelable(getString(R.string.transdroid_app_pref));
+
+            if (transdroidIntent != null)
+                trnsdroidPref.setIntent(transdroidIntent);
+
+            trnsdroidPref.setEnabled(true);
+            trnsdroidPref.setTitle(getString(transdroidIntent == null ? R.string.get_from_market : R.string.open_transdroid));
+            trnsdroidPref.setSummary(getString(transdroidIntent == null ? R.string.is_not_installed : R.string.is_installed,
+                    getString(R.string.transdroid)));
+
+            Intent ateIntent = data.getParcelable(getString(R.string.ate_app_pref));
+
+            if (ateIntent != null)
+                atePref.setIntent(ateIntent);
+
+            useAtePref.setEnabled(ateIntent != null);
+            atePref.setEnabled(true);
+            atePref.setTitle(getString(ateIntent == null ? R.string.get_from_market : R.string.open_ate));
+            atePref.setSummary(getString(ateIntent == null ? R.string.is_not_installed : R.string.is_installed, "ATE"));
+        }
+
+        @Override
+        public void onLoaderReset(Loader<Bundle> loader) {}
     }
 
     @TargetApi(HONEYCOMB)

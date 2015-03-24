@@ -13,7 +13,7 @@
     <string name="nf_persistent_summary">Prevents frequent restarts</string>
     <string name="host">Host</string>
     <string name="port">Port</string>
-    <string name="download_transdroid">Download a frontend from Google Play</string>
+    <string name="get_from_market">Download from Google Play</string>
     <string name="official_site">Official aria2 site</string>
     <string name="license">License</string>
     <string name="view_source_code">View source code</string>
@@ -40,7 +40,13 @@
         to look at your frontend for details.
     </string>
     <string name="use_ate_title">ATE integration</string>
-    <string name="use_ate_summary">Open aria2 in Android Terminal Emulator</string>
+    <string name="use_ate_summary">Open aria2 in ATE</string>
     <string name="ate">Terminal Emulator</string>
-    <string name="download_ate">Download ATE from Google Play</string>
+
+    <string name="transdroid_app_pref">transdroid</string>
+    <string name="ate_app_pref">ate</string>
+    <string name="open_ate">Open Terminal Emulator</string>
+    <string name="open_transdroid">Open Transdroid</string>
+    <string name="is_not_installed">%s is not installed</string>
+    <string name="is_installed">%s is installed</string>
 </resources>
