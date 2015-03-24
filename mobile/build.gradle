@@ -3,11 +3,6 @@ import java.util.regex.Pattern
 apply plugin: 'com.android.application'
 apply plugin: 'de.undercouch.download'
 
-def userGradleScript = file("$rootProject.projectDir/private.gradle")
-if (userGradleScript.exists()) {
-    apply from: userGradleScript
-}
-
 def aria2Version = '1.18.9'
 def ownVersion = '0.9.0.4'
 
@@ -30,18 +25,7 @@ android {
             universalApk true
         }
     }
-    signingConfigs {
-        release {
-            def keystorePathEnv = System.getenv('KEYSTORE')
-            def keyAliasEnv = System.getenv('KEY_ALIAS')
 
-            storeFile file(keystorePathEnv?.trim() ? keystorePathEnv : "$rootProject.projectDir/fake.keystore")
-            keyAlias 'alias'
-
-            storePassword '***'
-            keyPassword '***'
-        }
-    }
     buildTypes {
         debug {
             minifyEnabled false
@@ -51,7 +35,6 @@ android {
             minifyEnabled true
             shrinkResources true
             proguardFiles 'proguard-common.pro', 'proguard-obfuscate.pro'
-            signingConfig signingConfigs.release
         }
     }
     compileOptions {
@@ -60,7 +43,10 @@ android {
     }
 }
 
-
+def userGradleScript = file("$rootProject.projectDir/private.gradle")
+if (userGradleScript.exists()) {
+    apply from: userGradleScript
+}
 
 apply plugin: 'me.tatarka.retrolambda'
 
@@ -146,7 +132,7 @@ tasks.addRule("NDK tasks") { String taskName ->
 import de.undercouch.gradle.tasks.download.Download
 
 task downloadArmv5binary(type: Download) {
-    src "http://sourceforge.net/projects/aria2/files/stable/aria2-$aria2Version/aria2-$aria2Version-android-build1.zip"
+    src "http://sourceforge.net/projects/aria2/files/stable/aria2-1.18.8/aria2-1.18.8-android-build1.zip"
     dest new File(buildDir, 'armv5aria.zip')
     onlyIfNewer true
 }
@@ -188,38 +174,6 @@ tasks.renameExecutables.dependsOn ndkBuildAria2Abi_mips, ndkBuildAria2Abi_x86, n
 
 tasks.withType(JavaCompile.class).each { JavaCompile compileTask ->
     compileTask.dependsOn renameExecutables
-}
-
-import javax.swing.JFileChooser
-import javax.swing.JOptionPane
-import java.awt.HeadlessException
-
-task askForPasswords << {
-
-    try {
-        def fc = new JFileChooser(dialogTitle: 'Keystore file: ', fileSelectionMode: JFileChooser.FILES_ONLY);
-        fc.showOpenDialog();
-        def keystoreFile = fc.getSelectedFile();
-
-        android.signingConfigs.release.storeFile = keystoreFile
-
-        def readln = JOptionPane.&showInputDialog
-
-        if ('defaultKeyAlias' == android.signingConfigs.release.storePassword)
-            android.signingConfigs.release.keyAlias = readln 'Key alias: '
-
-        android.signingConfigs.release.storePassword = readln 'Keystore password: '
-        android.signingConfigs.release.keyPassword = readln 'Key password: '
-    } catch (HeadlessException graphicalDialogFailed) {
-        try {
-            android.signingConfigs.release.keystoreFile = priv.storeFile
-            android.signingConfigs.release.storePassword = priv.storePass
-            android.signingConfigs.release.keyPassword = priv.storeKeyPass
-        } catch (Exception ignored) {}
-
-        if (!android.signingConfigs.release.storePassword || !android.signingConfigs.release.keyPassword)
-            throw new RuntimeException("failed to read signing config from local.properties", graphicalDialogFailed)
-    }
 }
 
 tasks.whenTaskAdded { theTask ->
