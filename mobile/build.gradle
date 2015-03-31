@@ -1,17 +1,14 @@
-import java.util.regex.Pattern
-
 apply plugin: 'com.android.application'
-apply plugin: 'de.undercouch.download'
 
 def aria2Version = '1.18.9'
 def ownVersion = '0.9.0.4'
 
 android {
     compileSdkVersion 21
-    buildToolsVersion "21.1.2"
+    buildToolsVersion '21.1.2'
 
     defaultConfig {
-        applicationId "net.sf.aria2"
+        applicationId 'net.sf.aria2'
         minSdkVersion 9
         targetSdkVersion 21
         versionCode 12 // bump by 3 per release
@@ -60,127 +57,7 @@ dependencies {
     compile 'com.afollestad:material-dialogs:0.6.3.1'
 }
 
-def aria2NdkTaskPattern = Pattern.compile("ndkBuildAria2Abi_(.+)");
-
-tasks.addRule("NDK tasks") { String taskName ->
-    def m = aria2NdkTaskPattern.matcher(taskName);
-
-    if (m.matches()) {
-        def abi = m.group(1)
-
-        def toolchainDir = "$projectDir.absolutePath/build/toolchain"
-        def libsDir = "$projectDir.absolutePath/src/main/jniLibs"
-
-        def gccVer = "4.9"
-
-        def toolchain
-        def hostName
-        def arch
-
-        switch (abi) {
-            case 'x86':
-                hostName = 'i686-linux-android'
-                toolchain = "x86-${gccVer}"
-                arch = 'arch-x86'
-                break
-            case 'mips':
-                hostName = 'mipsel-linux-android'
-                toolchain = "mipsel-linux-android-${gccVer}"
-                arch = 'arch-mips'
-                break
-            case 'armeabi_v7a':
-                abi = 'armeabi-v7a'
-                hostName = 'arm-linux-androideabi'
-                toolchain = "arm-linux-androideabi-${gccVer}"
-                arch = 'arch-arm'
-                break
-            default:
-                throw new UnsupportedOperationException(abi + " not supported!")
-        }
-
-        def prepTask = taskName.replace("BuildAria2", "Prepare")
-        prepTask = task(type: Exec, prepTask) {
-            commandLine "$System.env.ANDROID_NDK/build/tools/make-standalone-toolchain.sh", "--platform=android-15",
-                    "--toolchain=$toolchain", "--install-dir=$toolchainDir/$abi", "–-stl=libc++"
-
-            inputs.file "$System.env.ANDROID_NDK/build/tools/make-standalone-toolchain.sh"
-            outputs.dir "$toolchainDir/$abi"
-        }
-
-        def picTask = task(type: Exec, taskName + "PIC") {
-            environment LDFLAGS: "-pie"
-
-            commandLine "$projectDir.absolutePath/jni/build-natives.sh", "$hostName", "$abi", "$toolchain", "$arch"
-
-            inputs.file "$projectDir.absolutePath/jni/build-natives.sh"
-            outputs.dir "$libsDir/$abi"
-
-            dependsOn prepTask
-        }
-
-        task(type: Exec, taskName) {
-            commandLine "$projectDir.absolutePath/jni/build-natives.sh", "$hostName", "$abi", "$toolchain", "$arch"
-
-            inputs.files "$projectDir.absolutePath/jni/build-natives.sh"
-            outputs.dir "$libsDir/$abi"
-
-            dependsOn picTask
-        }
-    }
-}
-
-import de.undercouch.gradle.tasks.download.Download
-
-task downloadArmv5binary(type: Download) {
-    src "http://sourceforge.net/projects/aria2/files/stable/aria2-1.18.8/aria2-1.18.8-android-build1.zip"
-    dest new File(buildDir, 'armv5aria.zip')
-    onlyIfNewer true
-}
-
-task downloadAndUnzipArmv5Binary(dependsOn: downloadArmv5binary, type: Copy) {
-    from zipTree(downloadArmv5binary.dest)
-
-    eachFile { FileCopyDetails fcp ->
-        logger.log LogLevel.WARN, fcp.toString()
-
-        if (fcp.relativePath.pathString.endsWith('aria2c')) {
-            def segments = fcp.relativePath.segments
-            def pathsegments =segments[1..-1] as String[]
-            fcp.relativePath = new RelativePath(!fcp.file.isDirectory(), pathsegments)
-        }
-        else
-            fcp.exclude()
-    }
-
-    includeEmptyDirs = false
-
-    rename('aria2c', 'aria2')
-
-    into "$projectDir.absolutePath/src/main/jniLibs/armeabi"
-}
-
-task renameExecutables(type: Copy) {
-    from "$projectDir.absolutePath/src/main/jniLibs"
-    into "$projectDir.absolutePath/src/main/jniLibs"
-    include '**/*'
-    exclude '**/*.so'
-    exclude '**/*.jar'
-    rename(/(.+)/, 'lib$1_exec.so')
-}
-
-tasks.renameExecutables.dependsOn ndkBuildAria2Abi_mips, ndkBuildAria2Abi_x86, ndkBuildAria2Abi_armeabi_v7a, downloadAndUnzipArmv5Binary
-
-//tasks.clean.dependsOn cleanRenameExecutables
-
-tasks.withType(JavaCompile.class).each { JavaCompile compileTask ->
-    compileTask.dependsOn renameExecutables
-}
-
-tasks.whenTaskAdded { theTask ->
-    if (theTask.name.matches("package(:?.+)Release")) {
-        theTask.dependsOn "askForPasswords"
-    }
-}
+apply from: file("$projectDir/prepare-natives.gradle")
 
 ext.versionCodes = ['armeabi': 0, 'armeabi-v7a': 1, 'x86': 2, 'mips': 3]
 

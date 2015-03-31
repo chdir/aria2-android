@@ -4,8 +4,8 @@ buildscript {
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:1.0.0'
+        classpath 'com.jakewharton.sdkmanager:gradle-plugin:0.12.0'
         classpath 'com.android.tools.build:builder-model:1.0.0'
-        classpath 'de.undercouch:gradle-download-task:1.2'
         classpath 'me.tatarka:gradle-retrolambda:2.5.0'
         classpath ('com.github.triplet.gradle:play-publisher:1.0.1') {
             exclude group: 'com.google.guava'
@@ -17,4 +17,13 @@ allprojects {
     repositories {
         jcenter()
     }
+}
+
+subprojects {
+    def androidHome
+
+    if ((androidHome = System.env.'ANDROID_HOME')
+            && (androidHome = androidHome as File).exists()
+            && androidHome.canWrite())
+        apply plugin: 'android-sdk-manager'
 }
