@@ -51,10 +51,10 @@ dependencies {
     retrolambdaConfig 'net.orfjackal.retrolambda:retrolambda:1.8.0'
 
     compile project(':libtermexec')
-    compile 'com.android.support:appcompat-v7:21.0.3'
+    compile 'com.android.support:appcompat-v7:22.1.1'
     compile 'org.jraf:android-switch-backport:1.4.0'
     compile 'com.android.support:support-v4:21.0.3'
-    compile 'com.afollestad:material-dialogs:0.6.3.1'
+    compile 'com.afollestad:material-dialogs:0.7.4.2'
 }
 
 apply from: file("$projectDir/prepare-natives.gradle")

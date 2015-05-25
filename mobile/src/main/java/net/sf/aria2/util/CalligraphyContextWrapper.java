@@ -5,6 +5,11 @@ import android.content.Context;
 import android.content.ContextWrapper;
 import android.support.annotation.NonNull;
 import android.support.v7.internal.widget.*;
+import android.support.v7.widget.AppCompatCheckBox;
+import android.support.v7.widget.AppCompatCheckedTextView;
+import android.support.v7.widget.AppCompatEditText;
+import android.support.v7.widget.AppCompatRadioButton;
+import android.support.v7.widget.AppCompatSpinner;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -335,19 +340,19 @@ class CalligraphyFactory {
 
             switch (view.getClass().getName()) {
                 case "android.widget.EditText":
-                    view = new TintEditText(context, attrs);
+                    view = new AppCompatEditText(context, attrs);
                     break;
                 case "android.widget.Spinner":
-                    view = new TintSpinner(context, attrs);
+                    view = new AppCompatSpinner(context, attrs);
                     break;
                 case "android.widget.CheckBox":
-                    view = new TintCheckBox(context, attrs);
+                    view = new AppCompatCheckBox(context, attrs);
                     break;
                 case "android.widget.RadioButton":
-                    view = new TintRadioButton(context, attrs);
+                    view = new AppCompatRadioButton(context, attrs);
                     break;
                 case "android.widget.CheckedTextView":
-                    view = new TintCheckedTextView(context, attrs);
+                    view = new AppCompatCheckedTextView(context, attrs);
                     break;
             }
 
