@@ -106,13 +106,13 @@ final class Config extends ArrayList<String> implements Parcelable {
 
         final File sessionParent = sessionFile.getParentFile();
         //noinspection ResultOfMethodCallIgnored
-        sessionParent.mkdirs(); // (a guard for native code)
+        sessionParent.mkdirs();
 
         final File configFile = new File(sessionParent, "aria2.txt");
         //noinspection ResultOfMethodCallIgnored
         try {
-            configFile.createNewFile(); // (a guard for native code)
-        } catch (IOException ignore) {  ignore.printStackTrace(); }
+            configFile.createNewFile();
+        } catch (IOException ignored) {}
 
         add("-d");
         add(sessionParent.getAbsolutePath());

@@ -43,6 +43,7 @@ import android.support.v4.os.EnvironmentCompat;
 import android.text.TextUtils;
 
 import java.io.File;
+import java.io.IOException;
 
 public final class ConfigBuilder extends ContextWrapper {
     private final SharedPreferences prefs;
@@ -61,7 +62,7 @@ public final class ConfigBuilder extends ContextWrapper {
         if (!TextUtils.isEmpty(dDir))
             downloadDir = new File(dDir);
 
-        if (downloadDir == null || !downloadDir.exists() || !downloadDir.mkdirs()) {
+        if (downloadDir == null || (!downloadDir.exists() && !downloadDir.mkdirs())) {
             downloadDir = deriveDownloadDir();
             prefs.edit()
                     .putString(dDirPrefName, downloadDir.getAbsolutePath())
