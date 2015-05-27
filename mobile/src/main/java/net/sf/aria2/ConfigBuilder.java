@@ -36,10 +36,7 @@ import android.content.ContextWrapper;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Build;
-import android.os.Environment;
 import android.preference.PreferenceManager;
-import android.support.v4.content.ContextCompat;
-import android.support.v4.os.EnvironmentCompat;
 import android.text.TextUtils;
 
 import java.io.File;
@@ -48,26 +45,10 @@ import java.io.IOException;
 public final class ConfigBuilder extends ContextWrapper {
     private final SharedPreferences prefs;
 
-    private File downloadDir;
-
     public ConfigBuilder(Context base) {
         super(base);
 
-        prefs = PreferenceManager.getDefaultSharedPreferences(this);
-
-        final String dDirPrefName = getString(R.string.download_dir_pref);
-
-        String dDir = prefs.getString(dDirPrefName, "");
-
-        if (!TextUtils.isEmpty(dDir))
-            downloadDir = new File(dDir);
-
-        if (downloadDir == null || (!downloadDir.exists() && !downloadDir.mkdirs())) {
-            downloadDir = deriveDownloadDir();
-            prefs.edit()
-                    .putString(dDirPrefName, downloadDir.getAbsolutePath())
-                    .apply();
-        }
+        prefs = PreferenceManager.getDefaultSharedPreferences(base);
     }
 
     public Intent constructServiceCommand(Intent serviceMoniker) {
@@ -76,45 +57,29 @@ public final class ConfigBuilder extends ContextWrapper {
         final Intent intent = ariaConfig.putInto(serviceMoniker)
                 .putExtra(Config.EXTRA_INTERACTIVE, true);
 
+        final String downloadDir = prefs.getString(getString(R.string.download_dir_pref), "");
+        if (TextUtils.isEmpty(downloadDir))
+            return null;
+
         String binaryName = Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP ? "aria2_PIC" : "aria2";
         binaryName = "lib" + binaryName + "_exec.so";
         binaryName = new File(getApplicationInfo().nativeLibraryDir, binaryName).getAbsolutePath();
-        ariaConfig.setProcessname(binaryName);
 
         final File sessionFile = new File(downloadDir, ".aria2.session.gz");
-        ariaConfig.setSessionPath(sessionFile);
-        ariaConfig.setRPCSecret(getString(R.string.rpc_secret));
 
         final boolean showNfs = prefs.getBoolean(getString(R.string.show_nf_stopped_pref), true);
-        ariaConfig.setShowStoppedNf(showNfs);
-
-        final boolean useATE = prefs.getBoolean(getString(R.string.use_ate_pref), false);
-        ariaConfig.setUseATE(useATE);
 
         final boolean showOutput = prefs.getBoolean(getString(R.string.show_output_pref), false);
-        if (!showOutput) ariaConfig.add("-q");
-        ariaConfig.add("--show-console-readout=" + showOutput);
 
-        if (!useATE) {
-            ariaConfig.add("--summary-interval=0");
-        }
+        final boolean useATE = prefs.getBoolean(getString(R.string.use_ate_pref), false);
+
+        ariaConfig.setSessionPath(sessionFile)
+                .setProcessname(binaryName)
+                .setRPCSecret(getString(R.string.rpc_secret))
+                .setShowStoppedNf(showNfs)
+                .setUseATE(useATE)
+                .setShowOutput(showOutput);
 
         return intent;
-    }
-
-    private File deriveDownloadDir() {
-        File aria2Dir;
-        File[] externalDirs = ContextCompat.getExternalFilesDirs(this, Environment.DIRECTORY_MUSIC);
-        if (externalDirs.length > 1 && externalDirs[1] != null)
-            aria2Dir = externalDirs[1].getParentFile();
-        else {
-            File externalDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-            if (Environment.MEDIA_MOUNTED.equals(EnvironmentCompat.getStorageState(externalDir)))
-                aria2Dir = externalDir;
-            else
-                aria2Dir = getFilesDir();
-        }
-        aria2Dir = new File(aria2Dir, "Aria2Download");
-        return aria2Dir;
     }
 }

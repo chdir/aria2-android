@@ -47,16 +47,21 @@ import android.preference.PreferenceActivity;
 import android.support.annotation.Nullable;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.TaskStackBuilder;
+import android.support.v4.content.LocalBroadcastManager;
+import android.text.TextUtils;
 import android.util.Log;
 import android.widget.Toast;
 import jackpal.androidterm.TermExec;
 import jackpal.androidterm.libtermexec.v1.ITerminal;
 import net.sf.aria2.util.SimpleResultReceiver;
 
+import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.channels.FileChannel;
 import java.util.*;
-import java.util.concurrent.CountDownLatch;
 
 public final class Aria2Service extends Service {
     private static final String TAG = "aria2service";
@@ -232,7 +237,7 @@ public final class Aria2Service extends Service {
 
         final String errText = ec.getDesc(getResources());
 
-        if (ec.isSuccess()) {
+        if (ec.isSuccess() && someTimeElapsed) {
             builder.setContentText(errText);
         } else {
             if (someTimeElapsed) {
@@ -246,7 +251,7 @@ public final class Aria2Service extends Service {
                             .setStyle(new NotificationCompat.BigTextStyle().bigText(
                                     getString(R.string.explanation, errText)));
                 }
-            } else  {
+            } else if (!ec.isSuccess()) {
                 builder.setContentInfo('#' + ec.name())
                         .setContentText(Character.toUpperCase(errText.charAt(0))
                                 + errText.substring(1));
@@ -261,22 +266,6 @@ public final class Aria2Service extends Service {
         // TODO use
         Toast.makeText(getApplicationContext(),
                 getText(R.string.will_start_later), Toast.LENGTH_LONG).show();
-    }
-
-    private void reportAria2Output(String errText) {
-        if (bindingCounter == 0)
-            return;
-
-        // https://stackoverflow.com/questions/21165802
-        errText = errText.replaceAll("(?m)(^ *| +(?= |$))", "")
-                .replaceAll("(?m)^$([\r\n]+?)(^$[\r\n]+?^)+", "$1");
-
-        final Handler niceUiThreadHandler = new Handler(Looper.getMainLooper());
-
-        final String finalText = errText.length() > 300 ?
-                                 '…' + errText.substring(errText.length() - 299, errText.length()) : errText;
-
-        niceUiThreadHandler.post(() -> Toast.makeText(getApplicationContext(), finalText, Toast.LENGTH_LONG).show());
     }
 
     private void updateNf() {
@@ -310,20 +299,22 @@ public final class Aria2Service extends Service {
 
     private final class AriaRunnable implements Runnable {
         private final Config properties;
+        private final boolean delegateDisplay;
 
-        private volatile int pid;
-        private volatile TermConnection conn;
-
-        // TODO
-        private volatile boolean delegateDisplay;
-
-        private boolean killedForcefully;
+        // accessed from the bg thread only
         private long startupTime;
+
+        // accessed from the main thread only
+        private boolean killedForcefully;
+        private boolean warnedOnce;
+
+        // accessed from both
+        private volatile int pid;
 
         public AriaRunnable(Config properties) {
             this.properties = properties;
 
-            delegateDisplay = properties.isUseATE();
+            delegateDisplay = properties.useATE;
         }
 
         public void run() {
@@ -343,152 +334,36 @@ public final class Aria2Service extends Service {
 
                 pid = pBuilder.start(ptmx);
 
+                if (pid <= 1)
+                    return;
+
                 sendResult(true);
 
-                if (delegateDisplay) {
-                    conn = rebind(ptmx);
+                final Thread slurper = new Thread(new ProcessOutputHandler(getApplicationContext(), ptmx,
+                        delegateDisplay, properties.showOutput));
 
-                    if (conn != null) {
-                        synchronized (conn.fightLeaks) {
-                            conn.fightLeaks.wait();
-                        }
-                    }
-                }
+                slurper.start();
 
-                try (Scanner iStream = new Scanner(new ParcelFileDescriptor.AutoCloseInputStream(ptmx)).useDelimiter("\\A")) {
-                    final String errText;
-                    if (iStream.hasNext() && !(errText = iStream.next()).isEmpty() &&
-                            (!didSomeWork() || !properties.contains("-q")))
-                        reportAria2Output(errText);
+                final int resultCode = TermExec.waitFor(pid);
+
+                slurper.interrupt();
+
+                sendResult(false);
+
+                if (properties.showStoppedNf) {
+                    final Notification n = createStoppedNf(resultCode, didSomeWork());
+
+                    ((NotificationManager) getSystemService(NOTIFICATION_SERVICE)).notify(R.id.nf_stopped, n);
                 }
             }
             catch (IOException tooBad) {
                 Log.e(Config.TAG, tooBad.getLocalizedMessage());
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-
-                // we have been interrupted, as the child to cleanup after himself
-
-                Process.sendSignal(pid, 15); // SIGTERM
             } finally {
-                if (pid > 1) {
-                    final int r = TermExec.waitFor(pid);
-
-                    pid = -1;
-
-                    if (properties.isShowStoppedNf()) {
-                        final Notification n = createStoppedNf(r, didSomeWork());
-
-                        ((NotificationManager) getSystemService(NOTIFICATION_SERVICE)).notify(R.id.nf_stopped, n);
-                    }
-                }
+                pid = -1;
 
                 stopSelf();
 
-                sendResult(false);
-
                 lastInvocation = null;
-            }
-        }
-
-        private TermConnection rebind(ParcelFileDescriptor ptmx) {
-            final PackageManager pm = getPackageManager();
-
-            final Intent i = new Intent()
-                    .setAction(TermExec.SERVICE_ACTION_V1);
-
-            final ResolveInfo ri = pm.resolveService(i, 0);
-
-            if (ri == null || ri.serviceInfo == null)
-                return null;
-
-            final ComponentName component = new ComponentName(ri.serviceInfo.packageName, ri.serviceInfo.name);
-
-            i.setComponent(component);
-
-            final TermConnection connection = new TermConnection(getApplicationContext(), ptmx);
-
-            // BIND_AUTO_CREATE ensures, that target Service won't die, when we unbind
-            // (see also https://stackoverflow.com/q/10676204)
-            //
-            // Context.BIND_WAIVE_PRIORITY may be used to prevent unnecessary priority gains
-            // (see also https://stackoverflow.com/q/6645193)
-            boolean bindingInitiated = bindService(i, connection, Context.BIND_AUTO_CREATE);
-
-            if (bindingInitiated)
-                return connection;
-            else {
-                // this can imply one of two things:
-                // 1) Supplied ComponentName is invalid (or have become invalid very recently)
-                // 2) The implementation of service refused to communicate with us, for example,
-                // because it banned us from further attempts, or because it knows, that our
-                // terminal end is no longer valid etc.
-                //
-                // returning a number here would be dangerously misleading, so let's throw the most
-                // harmless checked Exception available
-
-                return null;
-            }
-        }
-
-        private class TermConnection implements ServiceConnection {
-            final Object fightLeaks = new Object();
-
-            private final ParcelFileDescriptor ptmx;
-            private final Context context;
-
-            private boolean lastConnectionMade;
-            private boolean closed;
-
-            private TermConnection(Context context, ParcelFileDescriptor ptmx) {
-                this.context = context;
-                this.ptmx = ptmx;
-            }
-
-            @Override
-            public void onServiceConnected(ComponentName name, IBinder service) {
-                try {
-                    ITerminal it = ITerminal.Stub.asInterface(service);
-
-                    it.startSession(ptmx, new ResultReceiver(new Handler(Looper.getMainLooper())) {
-                        @Override
-                        protected void onReceiveResult(int resultCode, Bundle resultData) {
-                            release();
-                        }
-                    });
-
-                    lastConnectionMade = true;
-                } catch (RemoteException e) {
-                    release();
-                }
-            }
-
-            // would likely happen when Android decides to kill spawned Terminal Service
-            @Override
-            public void onServiceDisconnected(ComponentName name) {
-                if (lastConnectionMade)
-                    lastConnectionMade = false;
-                else
-                    release();
-            }
-
-            private void release() {
-                if (closed)
-                    return;
-
-                try {
-                    context.unbindService(this);
-
-                    Log.e("Ouch!", "Unbound succesfully");
-                } catch (Throwable dianneYou) {
-                    Log.e("AARGH!", "Unbound succesfully w/error: " + dianneYou.getLocalizedMessage());
-                }
-
-                synchronized (fightLeaks) {
-                    fightLeaks.notify();
-                }
-
-                closed = true;
             }
         }
 
@@ -502,21 +377,184 @@ public final class Aria2Service extends Service {
 
         void stop() {
             if (pid > 1) {
-                if (conn != null || !delegateDisplay) {
-                    if (conn != null)
-                        conn.release();
-
-                    conn = null;
-                    delegateDisplay = true; // uhhh...
+                if (!warnedOnce) {
+                    warnedOnce = true;
 
                     Process.sendSignal(pid, 2); // SIGINT
                 } else {
                     killedForcefully = true;
+
                     pid = -1;
 
                     Process.sendSignal(pid, Process.SIGNAL_KILL);
                 }
             }
+        }
+    }
+}
+
+class ProcessOutputHandler extends ContextWrapper implements Runnable {
+    private final boolean delegateDisplay;
+    private final boolean showMumblings;
+    private final ParcelFileDescriptor ptmx;
+
+    ProcessOutputHandler(Context ctx, ParcelFileDescriptor ptmx,
+                         boolean delegateDisplay, boolean showMumblings) {
+        super(ctx);
+
+        this.delegateDisplay = delegateDisplay;
+        this.showMumblings = showMumblings;
+        this.ptmx = ptmx;
+    }
+
+    @Override
+    public void run() {
+        long startupTime = System.currentTimeMillis();
+
+        try {
+            try {
+                try {
+                    final TermConnection conn;
+
+                    synchronized (ptmx) {
+                        if (delegateDisplay && (conn = rebind()) != null) {
+                            try (Closeable c = () -> unbindService(conn)) {
+                                ptmx.wait(); // wait until the service disconnects or aria2 process dies
+                            }
+                        }
+                    }
+                } finally {
+                    final ByteBuffer lastLines = ByteBuffer.allocate(1024).order(ByteOrder.nativeOrder());
+                    try (FileChannel fc = new ParcelFileDescriptor.AutoCloseInputStream(ptmx).getChannel()) {
+                        int slurped;
+                        do {
+                            slurped = fc.read(lastLines);
+
+                            if (lastLines.position() == lastLines.limit() || slurped == -1)
+                                Log.v(Config.TAG, new String(lastLines.array(), 0, lastLines.position()));
+
+                            if (lastLines.position() == lastLines.limit())
+                                lastLines.clear();
+                        }
+                        while (slurped != -1);
+                    } finally {
+                        final String errText = new String(lastLines.array(), 0, lastLines.position());
+
+                        Log.d(Config.TAG, errText);
+
+                        if (showMumblings || (System.currentTimeMillis() - startupTime < 400)) {
+                            // https://stackoverflow.com/questions/21165802
+                            final String trimmedText = errText.replaceAll("(?m)(^ *| +(?= |$))", "")
+                                    .replaceAll("(?m)^$([\r\n]+?)(^$[\r\n]+?^)+", "$1");
+
+                            if (!TextUtils.isEmpty(trimmedText)) {
+                                final Handler niceUiThreadHandler = new Handler(Looper.getMainLooper());
+
+                                final String finalText = trimmedText.length() > 300
+                                        ? '…' + trimmedText.substring(trimmedText.length() - 299, trimmedText.length())
+                                        : trimmedText;
+
+                                niceUiThreadHandler.post(() -> Toast.makeText(getApplicationContext(), finalText, Toast.LENGTH_LONG).show());
+                            }
+                        }
+                    }
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            } finally {
+                ptmx.close();
+            }
+        } catch (IOException ignore) {}
+    }
+
+    private TermConnection rebind() {
+        final PackageManager pm = getPackageManager();
+
+        final Intent i = new Intent()
+                .setAction(TermExec.SERVICE_ACTION_V1);
+
+        final ResolveInfo ri = pm.resolveService(i, 0);
+
+        if (ri == null || ri.serviceInfo == null)
+            return null;
+
+        final ComponentName component = new ComponentName(ri.serviceInfo.packageName, ri.serviceInfo.name);
+
+        i.setComponent(component);
+
+        final TermConnection connection = new TermConnection(ptmx);
+
+        // BIND_AUTO_CREATE ensures, that target Service won't die, when we unbind
+        // (see also https://stackoverflow.com/q/10676204)
+        //
+        // Context.BIND_WAIVE_PRIORITY may be used to prevent unnecessary priority gains
+        // (see also https://stackoverflow.com/q/6645193)
+        boolean bindingInitiated = bindService(i, connection, Context.BIND_AUTO_CREATE);
+
+        if (bindingInitiated) {
+            try {
+                ptmx.wait(5000); // wait until the connection have been successfully made
+
+                return connection;
+            } catch (InterruptedException e) {
+                return null;
+            }
+        }
+        else return null;
+    }
+
+    private static class TermConnection implements ServiceConnection {
+        private final ParcelFileDescriptor ptmx;
+
+        private boolean lastConnectionMade;
+        private boolean closed;
+
+        private TermConnection(ParcelFileDescriptor ptmx) {
+            this.ptmx = ptmx;
+        }
+
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            try {
+                ITerminal it = ITerminal.Stub.asInterface(service);
+
+                it.startSession(ptmx, new ResultReceiver(new Handler(Looper.getMainLooper())) {
+                    @Override
+                    protected void onReceiveResult(int resultCode, Bundle resultData) {
+                        release();
+                    }
+                });
+
+                if (!lastConnectionMade) {
+                    synchronized (ptmx) {
+                        ptmx.notify(); // indicate, that first connection was successful
+                    }
+                }
+
+                lastConnectionMade = true;
+            } catch (Exception e) {
+                release();
+            }
+        }
+
+        // would likely happen when Android decides to kill spawned Terminal Service
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            if (lastConnectionMade)
+                lastConnectionMade = false;
+            else
+                release();
+        }
+
+        private void release() {
+            if (closed)
+                return;
+
+            synchronized (ptmx) {
+                ptmx.notify();
+            }
+
+            closed = true;
         }
     }
 }

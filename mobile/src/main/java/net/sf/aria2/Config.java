@@ -50,9 +50,11 @@ final class Config extends ArrayList<String> implements Parcelable {
 
     static final String TAG = "aria2j";
 
-    private boolean showStoppedNf;
+    boolean showStoppedNf;
 
-    private boolean useATE;
+    boolean useATE;
+
+    boolean showOutput;
 
     public Config() {
         super(20);
@@ -72,15 +74,20 @@ final class Config extends ArrayList<String> implements Parcelable {
 
     public Config setUseATE(boolean useATE) {
         this.useATE = useATE;
+
+        add("--show-console-readout=" + useATE);
+
+        if (!useATE) add("--summary-interval=0");
+
         return this;
     }
 
-    public boolean isShowStoppedNf() {
-        return showStoppedNf;
-    }
+    public Config setShowOutput(boolean showOutput) {
+        this.showOutput = showOutput;
 
-    public boolean isUseATE() {
-        return useATE;
+        if (!showOutput && !useATE) add("-q");
+
+        return this;
     }
 
     @SuppressWarnings("unchecked")
@@ -97,11 +104,12 @@ final class Config extends ArrayList<String> implements Parcelable {
         return container.getParcelableExtra(Config.EXTRA_NAME);
     }
 
-    public void setProcessname(String processname) {
+    public Config setProcessname(String processname) {
         add(0, processname);
+        return this;
     }
 
-    public void setSessionPath(File sessionFile) {
+    public Config setSessionPath(File sessionFile) {
         final String fileName = sessionFile.getAbsolutePath();
 
         final File sessionParent = sessionFile.getParentFile();
@@ -127,11 +135,14 @@ final class Config extends ArrayList<String> implements Parcelable {
             add("-i");
             add(fileName);
         }
+
+        return this;
     }
 
-    public void setRPCSecret(String secret) {
+    public Config setRPCSecret(String secret) {
         add("--rpc-secret");
         add(secret);
+        return this;
     }
 
     @Override
@@ -144,13 +155,16 @@ final class Config extends ArrayList<String> implements Parcelable {
         dest.writeArray(toArray());
         dest.writeValue(showStoppedNf);
         dest.writeValue(useATE);
+        dest.writeValue(showOutput);
     }
 
     public static final Parcelable.Creator<Config> CREATOR = new Creator<Config>() {
         @Override
         public Config createFromParcel(Parcel source) {
             return new Config(Arrays.asList(source.readArray(getClass().getClassLoader())))
-                    .setShowStoppedNf((Boolean) source.readValue(null)).setUseATE((Boolean) source.readValue(null));
+                    .setShowStoppedNf((Boolean) source.readValue(null))
+                    .setUseATE((Boolean) source.readValue(null))
+                    .setShowOutput((Boolean) source.readValue(null));
         }
 
         @Override
