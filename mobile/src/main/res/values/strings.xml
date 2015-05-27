@@ -49,4 +49,7 @@
     <string name="open_transdroid">Open Transdroid</string>
     <string name="is_not_installed">%s is not installed</string>
     <string name="is_installed">%s is installed</string>
+    <string name="space_available">%s available</string>
+    <string name="inacccessible_dir">Warning: chosen download directory isn\'t available for writing</string>
+    <string name="error_inaccessible_dir">Please, set the proper directory!</string>
 </resources>

@@ -1,18 +1,23 @@
-package net.sf.aria2;
+package net.sf.aria2.loader;
 
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.AsyncTaskLoader;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.Loader;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.os.Build;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
+import net.sf.aria2.R;
 
 @TargetApi(Build.VERSION_CODES.HONEYCOMB)
 public class ApplicationLoader extends AsyncTaskLoader<Bundle> {
+    private BroadcastReceiver receiver;
     private Bundle intents;
 
     public ApplicationLoader(Context context) {
@@ -21,7 +26,19 @@ public class ApplicationLoader extends AsyncTaskLoader<Bundle> {
 
     @Override
     protected void onStartLoading() {
-        forceLoad();
+        if (intents != null)
+            deliverResult(intents);
+
+        if (intents == null || takeContentChanged())
+            forceLoad();
+
+        if (receiver == null) {
+            IntentFilter filter = new IntentFilter();
+            filter.addAction(Intent.ACTION_PACKAGE_ADDED);
+            filter.addAction(Intent.ACTION_PACKAGE_REMOVED);
+            filter.addDataScheme("package");
+            getContext().registerReceiver(receiver = new DataObserverReceiver(), filter);
+        }
     }
 
     @Override
@@ -31,11 +48,19 @@ public class ApplicationLoader extends AsyncTaskLoader<Bundle> {
     }
 
     @Override
+    protected void onReset() {
+        if (receiver != null)
+            getContext().unregisterReceiver(receiver);
+
+        super.onReset();
+    }
+
+    @Override
     public void deliverResult(Bundle data) {
         if (isReset())
             return;
 
-        Bundle oldData = data;
+        Bundle oldData = intents;
         intents = data;
 
         if (isStarted())
@@ -68,5 +93,12 @@ public class ApplicationLoader extends AsyncTaskLoader<Bundle> {
         result.putParcelable(getContext().getString(R.string.ate_app_pref), termIntent);
 
         return result;
+    }
+
+    private class DataObserverReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            onContentChanged();
+        }
     }
 }

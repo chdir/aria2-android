@@ -48,11 +48,16 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.Toast;
+import net.sf.aria2.loader.ApplicationLoader;
+import net.sf.aria2.loader.DownloadDirLoader;
 import net.sf.aria2.util.CalligraphyContextWrapper;
 import net.sf.aria2.util.CloseableHandler;
 import net.sf.aria2.util.SimpleResultReceiver;
 import org.jraf.android.backport.switchwidget.TwoStatePreference;
 
+import java.io.File;
+import java.io.IOException;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -254,12 +259,13 @@ public final class MainActivity extends PreferenceActivity {
 
     @Override
     protected void attachBaseContext(Context newBase) {
-        super.attachBaseContext(new CalligraphyContextWrapper(newBase));
+        super.attachBaseContext(CalligraphyContextWrapper.wrap(newBase));
     }
 
     @TargetApi(HONEYCOMB)
-    public static class Aria2Preferences extends PreferenceFragment {
+    public static class Aria2Preferences extends PreferenceFragment implements LoaderManager.LoaderCallbacks<Long> {
         private ServiceControl serviceControl;
+        private Preference dirPref;
 
         @Override
         public void onCreate(Bundle savedInstanceState) {
@@ -267,6 +273,15 @@ public final class MainActivity extends PreferenceActivity {
             addPreferencesFromResource(R.xml.preferences_aria2);
             serviceControl = new ServiceControl(getActivity());
             serviceControl.init(getPreferenceScreen());
+
+            dirPref = findPreference(getString(R.string.download_dir_pref));
+        }
+
+        @Override
+        public void onActivityCreated(Bundle savedInstanceState) {
+            super.onActivityCreated(savedInstanceState);
+
+            getLoaderManager().initLoader(R.id.ldr_frontends, new Bundle(), this);
         }
 
         @Override
@@ -281,6 +296,50 @@ public final class MainActivity extends PreferenceActivity {
             serviceControl.stop();
 
             super.onStop();
+        }
+
+        @Override
+        public Loader<Long> onCreateLoader(int id, Bundle args) {
+            return new DownloadDirLoader(getActivity());
+        }
+
+        @Override
+        public void onLoadFinished(Loader<Long> loader, Long data) {
+            if (data < 0) {
+                dirPref.setSummary(getString(R.string.error_inaccessible_dir));
+
+                Toast.makeText(getActivity(), getString(R.string.inacccessible_dir), Toast.LENGTH_SHORT).show();
+            }
+            else
+                dirPref.setSummary(getString(R.string.space_available, bytesToHuman(data)));
+        }
+
+        @Override
+        public void onLoaderReset(Loader<Long> loader) {}
+
+        private static String bytesToHuman (long size)
+        {
+            long Kb = 1024;
+            long Mb = Kb * 1024;
+            long Gb = Mb * 1024;
+            long Tb = Gb * 1024;
+            long Pb = Tb * 1024;
+            long Eb = Pb * 1024;
+
+            if (size <  Kb)                 return floatForm( size ) + " byte";
+            if (size >= Kb && size < Mb)    return floatForm((double)size / Kb) + " Kb";
+            if (size >= Mb && size < Gb)    return floatForm((double)size / Mb) + " Mb";
+            if (size >= Gb && size < Tb)    return floatForm((double)size / Gb) + " Gb";
+            if (size >= Tb && size < Pb)    return floatForm((double)size / Tb) + " Tb";
+            if (size >= Pb && size < Eb)    return floatForm((double)size / Pb) + " Pb";
+            if (size >= Eb)                 return floatForm((double)size / Eb) + " Eb";
+
+            return "???";
+        }
+
+        private static String floatForm (double d)
+        {
+            return new DecimalFormat("#.##").format(d);
         }
     }
 
@@ -359,7 +418,6 @@ final class ServiceControl extends ContextWrapper implements ServiceConnection {
     private Intent sericeMoniker;
     private IAria2 serviceLink;
     private ResultReceiver backLink;
-    private ConfigBuilder builder;
 
     public ServiceControl(Context base) {
         super(base);
@@ -367,8 +425,6 @@ final class ServiceControl extends ContextWrapper implements ServiceConnection {
 
     public void init(PreferenceScreen screen) {
         sericeMoniker = new Intent(getApplicationContext(), Aria2Service.class);
-
-        builder = new ConfigBuilder(this);
 
         pref = (TwoStatePreference) screen.findPreference(getString(R.string.service_enable_pref));
     }
@@ -449,8 +505,11 @@ final class ServiceControl extends ContextWrapper implements ServiceConnection {
                     setPrefEnabled(false);
                 }
             } else {
-                if (startService(builder.constructServiceCommand(new Intent(sericeMoniker))) == null)
-                    setPrefEnabled(true);
+                final Intent intent = new ConfigBuilder(this).constructServiceCommand(new Intent(sericeMoniker));
+                if (intent == null)
+                    Toast.makeText(this, "Invalid download directory - set correct one", Toast.LENGTH_LONG).show();
+                else if (startService(intent) == null)
+                    setPrefEnabled(false);
             }
         }
 
