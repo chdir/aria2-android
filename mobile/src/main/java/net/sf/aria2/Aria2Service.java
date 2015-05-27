@@ -229,7 +229,7 @@ public final class Aria2Service extends Service {
                              : getString(R.string.aria2_has_failed_to_start);
 
         final NotificationCompat.Builder builder = new NotificationCompat.Builder(getApplicationContext())
-                .setSmallIcon(R.drawable.ic_nf_icon)
+                .setSmallIcon(R.drawable.ic_stat_a)
                 .setTicker(title)
                 .setContentTitle(title)
                 .setAutoCancel(true)
