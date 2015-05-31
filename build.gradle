@@ -12,10 +12,13 @@ buildscript {
         classpath 'com.jakewharton.sdkmanager:gradle-plugin:0.12.0'
         classpath 'com.android.tools.build:builder-model:1.0.0'
         classpath 'me.tatarka:gradle-retrolambda:2.5.0'
+        classpath 'me.tatarka.retrolambda.projectlombok:lombok.ast:0.2.3.a2'
         classpath ('com.github.triplet.gradle:play-publisher:1.0.1') {
             exclude group: 'com.google.guava'
         }
     }
+
+    configurations.classpath.exclude group: 'com.android.tools.external.lombok'
 }
 
 allprojects {
