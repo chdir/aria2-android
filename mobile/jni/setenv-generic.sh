@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/bin/bash -e
 # Cross-compile environment for Android
 #####################################################################
 
