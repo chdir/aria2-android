@@ -1,0 +1,36 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+  <!--preferences-->
+  <string name="enable_aria2_service">aria2 を開始</string>
+  <string name="show_output">aria2 の出力を表示</string>
+  <string name="download_dir">ダウンロードディレクトリー</string>
+  <string name="download_dir_summary">その他のファイルにも使用します</string>
+  <string name="show_output_summary">停止時にログを表示します</string>
+  <string name="notifications">通知</string>
+  <string name="nf_stopped">停止時に通知</string>
+  <string name="nf_stopped_summary">失敗の原因を含めることができます</string>
+  <string name="nf_persistent">永続的な通知</string>
+  <string name="nf_persistent_summary">頻繁に再起動されるのを防止します</string>
+  <string name="host">ホスト</string>
+  <string name="port">ポート</string>
+  <string name="official_site">オフィシャル aria2 サイト</string>
+  <string name="license">ライセンス</string>
+  <string name="view_source_code">ソースコードを表示</string>
+  <string name="view_source_code_summary">GitHub 上のこのポートのソースコードを表示します</string>
+  <string name="pref_header_frontend">フロントエンド</string>
+  <string name="pref_header_other">アプリについて</string>
+  <!--messages-->
+  <string name="will_start_later">aria2 を使用するにはネットワーク接続が必要です</string>
+  <!--notifications-->
+  <string name="aria2_has_stopped">aria2 が停止しました</string>
+  <string name="aria2_has_failed_to_start">aria2 は開始できませんでした</string>
+  <string name="all_finished">ダウンロードが全て完了しました</string>
+  <string name="there_are_unfinished">いくつかのダウンロードが完了しませんでした</string>
+  <string name="there_may_have_been_issues">問題のある可能性があります</string>
+  <string name="expand_nf_to_see_details">通知を展開して詳細を確認してください</string>
+  <string name="other_err">ダウンロードの追加中にエラー</string>
+  <string name="download_err">ダウンロード中にエラー</string>
+  <string name="explanation">
+aria2 はこのセッションで 1 つ以上の問題が発生しました。最後に報告された問題は: %s です。
+詳細についてはフロントエンドを見てください。</string>
+</resources>

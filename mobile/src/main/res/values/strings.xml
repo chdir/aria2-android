@@ -5,6 +5,7 @@
     <string name="show_output">Show aria2 output</string>
     <string name="download_dir">Download directory</string>
     <string name="download_dir_summary">Also used for misc files</string>
+    <string name="space_available">%s available</string>
     <string name="show_output_summary">Display log when stopped</string>
     <string name="notifications">Notifications</string>
     <string name="nf_stopped">Notify when stopped</string>
@@ -43,13 +44,13 @@
     <string name="use_ate_summary">Open aria2 in ATE</string>
     <string name="ate">Terminal Emulator</string>
 
-    <string name="transdroid_app_pref">transdroid</string>
-    <string name="ate_app_pref">ate</string>
     <string name="open_ate">Open Terminal Emulator</string>
     <string name="open_transdroid">Open Transdroid</string>
     <string name="is_not_installed">%s is not installed</string>
     <string name="is_installed">%s is installed</string>
-    <string name="space_available">%s available</string>
-    <string name="inacccessible_dir">Warning: chosen download directory isn\'t available for writing</string>
+
+    <string name="warning_inacccessible_dir">Warning: chosen download directory isn\'t available for writing</string>
     <string name="error_inaccessible_dir">Please, set the proper directory!</string>
+    <string name="error_empty_dir">Invalid download directory - set correct one</string>
+    <string name="error_service_failure">Failed to start Aria2 remote service</string>
 </resources>

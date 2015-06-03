@@ -1,0 +1,5 @@
+Updated aria2 binaries to version 1.18.9.
+Adhere to material design. The app is almost eye-candy now!
+The application now has ActionBar and more closely follows Android guidelines.
+Fixed the weird behavior, that have been happening after clicking on notification.
+Temporary fix for crashes during rare service restarts, proper fix will arrive soon.

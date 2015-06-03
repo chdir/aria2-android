@@ -5,6 +5,7 @@
   <string name="show_output">Отображать вывод aria2</string>
   <string name="download_dir">Каталог для загрузок</string>
   <string name="download_dir_summary">Также используется для вспомогательных файлов</string>
+  <string name="space_available">%s свободно</string>
   <string name="show_output_summary">Показ сообщений после остановки</string>
   <string name="notifications">Уведомления</string>
   <string name="nf_stopped">При остановке</string>
@@ -13,7 +14,7 @@
   <string name="nf_persistent_summary">Требуется для сохранения процесса в фоне</string>
   <string name="host">Хост</string>
   <string name="port">Порт</string>
-  <string name="get_from_market">Скачать фронтенд из Google Play</string>
+  <string name="get_from_market">Скачать из Google Play</string>
   <string name="official_site">Сайт aria2 (англ.)</string>
   <string name="license">Лицензия</string>
   <string name="view_source_code">Исходный код</string>
@@ -33,4 +34,15 @@
   <string name="download_err">ошибка в ходе загрузки</string>
   <string name="explanation">
 В ходе работы aria2 могли возникнуть одна и более проблем. Последняя из них: %s. Вы можете воспользоваться фронтендом для более детального отчёта.</string>
+  <string name="use_ate_title">Интеграция с ATE</string>
+  <string name="use_ate_summary">Отображать вывод в ATE</string>
+  <string name="ate">Эмулятор терминала</string>
+  <string name="open_ate">Открыть эмулятор терминала</string>
+  <string name="open_transdroid">Запустить Transdroid</string>
+  <string name="is_not_installed">%s не установлен</string>
+  <string name="is_installed">%s установлен</string>
+  <string name="warning_inacccessible_dir">Выбранный каталог не доступен на запись!</string>
+  <string name="error_inaccessible_dir">Каталог не доступен</string>
+  <string name="error_empty_dir">Укажите корректный каталог для загрузок</string>
+  <string name="error_service_failure">Запустить сервис aria2 не удалось</string>
 </resources>

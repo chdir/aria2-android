@@ -55,8 +55,6 @@ import net.sf.aria2.util.CloseableHandler;
 import net.sf.aria2.util.SimpleResultReceiver;
 import org.jraf.android.backport.switchwidget.TwoStatePreference;
 
-import java.io.File;
-import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -308,7 +306,7 @@ public final class MainActivity extends PreferenceActivity {
             if (data < 0) {
                 dirPref.setSummary(getString(R.string.error_inaccessible_dir));
 
-                Toast.makeText(getActivity(), getString(R.string.inacccessible_dir), Toast.LENGTH_SHORT).show();
+                Toast.makeText(getActivity(), getString(R.string.warning_inacccessible_dir), Toast.LENGTH_SHORT).show();
             }
             else
                 dirPref.setSummary(getString(R.string.space_available, bytesToHuman(data)));
@@ -507,7 +505,7 @@ final class ServiceControl extends ContextWrapper implements ServiceConnection {
             } else {
                 final Intent intent = new ConfigBuilder(this).constructServiceCommand(new Intent(sericeMoniker));
                 if (intent == null)
-                    Toast.makeText(this, "Invalid download directory - set correct one", Toast.LENGTH_LONG).show();
+                    Toast.makeText(this, getString(R.string.error_empty_dir), Toast.LENGTH_LONG).show();
                 else if (startService(intent) == null)
                     setPrefEnabled(false);
             }
@@ -523,7 +521,7 @@ final class ServiceControl extends ContextWrapper implements ServiceConnection {
 
     private void bailOutBecauseOfBindingFailure() {
         // we can't really do anything without ability to bind to the service
-        Toast.makeText(this, "Failed to start Aria2 remote service", Toast.LENGTH_LONG).show();
+        Toast.makeText(this, getString(R.string.error_service_failure), Toast.LENGTH_LONG).show();
 
         throw new IllegalStateException("Failed to start Aria2 remote service");
     }
