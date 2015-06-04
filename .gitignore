@@ -32,7 +32,7 @@ classes
 /*.log
 /logs/*
 jniLibs
-/private.gradle
+/private.properties
 /key.p12
 
 # misc

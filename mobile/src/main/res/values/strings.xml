@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources xmlns:tools="http://schemas.android.com/tools">
+<resources xmlns:tools="http://schemas.android.com/tools"
+           tools:locale="en"
+           tools:ignore="MissingTranslation">
     <!-- preferences -->
     <string name="enable_aria2_service">Start aria2</string>
     <string name="show_output">Show aria2 output</string>

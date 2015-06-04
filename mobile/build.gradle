@@ -1,24 +1,44 @@
 apply plugin: 'com.android.application'
 
-def aria2Version = '1.18.9'
-def ownVersion = '0.9.0.4'
+def aria2Version = '1.19.0'
+def ownVersion = '0.9.1'
+
+Properties props = new Properties()
+File propFile
+if((propFile = file("$rootProject.projectDir/private.properties")).exists()) {
+    new FileInputStream(propFile).withStream { InputStream is ->
+        props.load(is)
+    }
+}
+
+
 
 android {
     compileSdkVersion 21
     buildToolsVersion '21.1.2'
 
+    signingConfigs {
+        release {
+            storeFile file(props['storeFile'])
+            keyAlias props['keyAlias']
+
+            storePassword props['storePassword']
+            keyPassword props['keyPassword']
+        }
+    }
+
     defaultConfig {
         applicationId 'net.sf.aria2'
         minSdkVersion 9
         targetSdkVersion 22
-        versionCode 12 // bump by 3 per release
+        versionCode 16 // bump by 3 per release
         versionName "$ownVersion+u.$aria2Version"
     }
     splits {
         abi {
             enable true
             reset()
-            include 'x86', 'armeabi', 'armeabi-v7a', 'mips'
+            include 'x86', 'armeabi-v7a', 'mips'
             universalApk true
         }
     }
@@ -32,6 +52,7 @@ android {
             minifyEnabled true
             shrinkResources true
             proguardFiles 'proguard-common.pro', 'proguard-obfuscate.pro'
+            signingConfig signingConfigs.release
         }
     }
 
@@ -39,11 +60,6 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
-}
-
-def userGradleScript = file("$rootProject.projectDir/private.gradle")
-if (userGradleScript.exists()) {
-    apply from: userGradleScript
 }
 
 apply plugin: 'me.tatarka.retrolambda'

@@ -6,7 +6,7 @@
             android:key="@string/service_enable_pref"
             android:title="@string/enable_aria2_service" />
 
-    <com.afollestad.materialdialogs.prefs.MaterialEditTextPreference
+    <net.sf.aria2.util.SanePreference
             android:defaultValue=""
             android:key="@string/download_dir_pref"
             android:title="@string/download_dir"
