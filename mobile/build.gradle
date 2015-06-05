@@ -3,9 +3,11 @@ apply plugin: 'com.android.application'
 def aria2Version = '1.19.0'
 def ownVersion = '0.9.1'
 
-Properties props = new Properties()
-File propFile
-if((propFile = file("$rootProject.projectDir/private.properties")).exists()) {
+def props = new Properties()
+
+def propFile
+def propName = System.env.MAINTAINER_PROPS
+if(propName && (propFile = file(propName)).exists()) {
     new FileInputStream(propFile).withStream { InputStream is ->
         props.load(is)
     }
@@ -17,13 +19,15 @@ android {
     compileSdkVersion 21
     buildToolsVersion '21.1.2'
 
-    signingConfigs {
-        release {
-            storeFile file(props['storeFile'])
-            keyAlias props['keyAlias']
+    if (props) {
+        signingConfigs {
+            release {
+                storeFile file(props['storeFile'])
+                keyAlias props['keyAlias']
 
-            storePassword props['storePassword']
-            keyPassword props['keyPassword']
+                storePassword props['storePassword']
+                keyPassword props['keyPassword']
+            }
         }
     }
 
@@ -52,7 +56,10 @@ android {
             minifyEnabled true
             shrinkResources true
             proguardFiles 'proguard-common.pro', 'proguard-obfuscate.pro'
-            signingConfig signingConfigs.release
+
+            if (props) {
+                signingConfig signingConfigs.release
+            }
         }
     }
 

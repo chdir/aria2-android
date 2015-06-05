@@ -4,7 +4,7 @@
 -keep public class com.android.vending.licensing.ILicensingService
 
 # For native methods, see http://proguard.sourceforge.net/manual/examples.html#native
--keepclasseswithmembernames class * {
+-keepclasseswithmembernames,includedescriptorclasses class * {
     native <methods>;
 }
 
@@ -21,7 +21,7 @@
 }
 
 # For enumeration classes, see http://proguard.sourceforge.net/manual/examples.html#enumerations
--keepclassmembers enum * {
+-keepclassmembers,allowoptimization enum * {
     public static **[] values();
     public static ** valueOf(java.lang.String);
 }

@@ -26,6 +26,21 @@ get PIC/non-PIC versions and x86 versions of aria2. But, most importantly, the L
 lacks integration with Android system; no notifications, no sane defaults, no way to start/stop
 the process in one click. This project attempts to fix those issues.
 
+Building from sources
+==========
+
+````bash
+git clone --recursive "https://github.com/Alexander--/aria2-android"
+cd aria2-android
+echo "/path/to/android-ndk" > local.properties
+./gradlew renameExecutables
+./gradlew assembleDebug
+````
+
+If you have variable `ANDROID_HOME` set up and the directory in question is writable by user, the build 
+will autimatically install correct SDK and tools versions there. Otherwise you have to do that yourself 
+beforehand.
+
 Current state
 ==========
 

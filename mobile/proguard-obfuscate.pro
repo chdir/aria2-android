@@ -64,20 +64,29 @@
     @com.google.android.gms.common.annotation.KeepName *;
 }
 
--keepnames class * implements android.os.Parcelable {
+-keepclassmembers class * implements android.os.Parcelable {
     public static final ** CREATOR;
     public static ** CREATOR;
+    public static final android.os.Parcelable$Creator *;
+    public static android.os.Parcelable$Creator *;
 }
+
+-keepnames class * implements android.os.Parcelable
+-keepnames class * implements java.lang.Exception
+
+-keepclassmembers class * implements java.io.Serializable {
+    private static final java.io.ObjectStreamField[] serialPersistentFields;
+    private void writeObject(java.io.ObjectOutputStream);
+    private void readObject(java.io.ObjectInputStream);
+    java.lang.Object writeReplace();
+    java.lang.Object readResolve();
+}
+
+# Add additional guards for any serializable objects, that may be written to disk!!!
 
 -keep class com.google.android.gms.ads.identifier.AdvertisingIdClient** { *; }
 
 # CRest
--keepclassmembers class ru.arsenalmedia.smartbalance.server.** {
-    <init>(...);
-}
--keepclassmembers class ru.arsenalmedia.smartbalance.crest.* {
-    <init>(...);
-}
 -keepclassmembers class org.codegist.** {
     <init>(...);
 }
