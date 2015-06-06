@@ -487,7 +487,7 @@ final class ServiceControl extends ContextWrapper implements ServiceConnection {
     private boolean changeAriaServiceState(Preference p) {
         if (p.isEnabled()) {
             // it looks unsightly when current session overlaps with previous one...
-            ((NotificationManager) getSystemService(NOTIFICATION_SERVICE)).cancel(R.id.nf_stopped);
+            ((NotificationManager) getSystemService(NOTIFICATION_SERVICE)).cancel(R.id.nf_status);
 
             pref.setEnabled(false);
             uiThreadHandler.postDelayed(() -> pref.setEnabled(true), 4000);

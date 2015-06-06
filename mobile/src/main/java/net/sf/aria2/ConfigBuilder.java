@@ -55,7 +55,8 @@ public final class ConfigBuilder extends ContextWrapper {
         final Config ariaConfig = new Config();
 
         final Intent intent = ariaConfig.putInto(serviceMoniker)
-                .putExtra(Config.EXTRA_INTERACTIVE, true);
+                .putExtra(Config.EXTRA_INTERACTIVE, true)
+                .putExtra(Aria2Service.EXTRA_NOTIFICATION, NfBuilder.createSerivceNf(this));
 
         final String downloadDir = prefs.getString(getString(R.string.download_dir_pref), "");
         if (TextUtils.isEmpty(downloadDir))

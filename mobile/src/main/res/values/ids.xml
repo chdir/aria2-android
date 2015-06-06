@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <item name="nf_stopped" type="id"/>
+    <item name="nf_status" type="id"/>
     <item name="customfactory_tag_id" type="id"/>
     <item name="ldr_frontends" type="id"/>
 </resources>
