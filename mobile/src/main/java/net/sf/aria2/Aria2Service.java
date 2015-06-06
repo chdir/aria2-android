@@ -31,10 +31,8 @@
  */
 package net.sf.aria2;
 
-import android.annotation.SuppressLint;
 import android.app.Notification;
 import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.app.Service;
 import android.content.*;
 import android.content.pm.PackageManager;
@@ -43,10 +41,7 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.*;
 import android.os.Process;
-import android.preference.PreferenceActivity;
 import android.support.annotation.Nullable;
-import android.support.v4.app.NotificationCompat;
-import android.support.v4.app.TaskStackBuilder;
 import android.text.TextUtils;
 import android.util.Log;
 import android.widget.Toast;
@@ -65,6 +60,17 @@ import java.util.*;
 public final class Aria2Service extends Service {
     private static final String TAG = "aria2service";
 
+    static final String EXTRA_NOTIFICATION = "net.sf.aria2.extra.NF";
+
+    static final String ACTION_TOAST = "net.sf.aria2.action.TOAST";
+    static final String EXTRA_TEXT = "net.sf.aria2.extra.TEXT";
+
+    static final String ACTION_NF_STOPPED = "net.sf.aria2.action.NOTIFY";
+    static final String EXTRA_EXIT_CODE = "net.sf.aria2.extra.EC";
+    static final String EXTRA_DID_WORK = "net.sf.aria2.extra.WORKED";
+    static final String EXTRA_KILLED_FORCEFULLY = "net.sf.aria2.extra.KILL";
+
+    private Notification persistentNf;
     private Binder link;
     private Handler bgThreadHandler;
     private HandlerThread reusableThread;
@@ -98,6 +104,8 @@ public final class Aria2Service extends Service {
 
             return START_NOT_STICKY;
         }
+
+        persistentNf = intent.getParcelableExtra(EXTRA_NOTIFICATION);
 
         unregisterOldReceiver();
 
@@ -198,83 +206,23 @@ public final class Aria2Service extends Service {
         backLink.send(0, b);
     }
 
-    private Notification createNf() {
-        @SuppressLint("InlinedApi")
-        final Intent resultIntent = new Intent(getApplicationContext(), MainActivity.class)
-                .putExtra(PreferenceActivity.EXTRA_SHOW_FRAGMENT, "net.sf.aria2.MainActivity$Aria2Preferences")
-                .putExtra(Config.EXTRA_FROM_NF, true);
-
-        // note: using addParentStack results in hanging for some reason (confirmed on JellyBean)
-        // there is only one activity in stack to handle up and back navigation differently
-        final TaskStackBuilder stackBuilder = TaskStackBuilder.create(getApplicationContext())
-                .addNextIntent(resultIntent);
-        final PendingIntent contentIntent = stackBuilder.getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT);
-
-        return new NotificationCompat.Builder(getApplicationContext())
-                .setSmallIcon(R.drawable.ic_nf_icon)
-                .setTicker("aria2 is running")
-                .setContentTitle("aria2 is running")
-                .setContentText("Touch to open settings")
-                .setContentIntent(contentIntent)
-                .setOnlyAlertOnce(true)
-                .build();
-    }
-
-    private Notification createStoppedNf(int code, boolean someTimeElapsed) {
-        final ExitCode ec = ExitCode.from(code);
-
-        final String title = someTimeElapsed
-                             ? getString(R.string.aria2_has_stopped)
-                             : getString(R.string.aria2_has_failed_to_start);
-
-        final NotificationCompat.Builder builder = new NotificationCompat.Builder(getApplicationContext())
-                .setSmallIcon(R.drawable.ic_stat_a)
-                .setTicker(title)
-                .setContentTitle(title)
-                .setAutoCancel(true)
-                .setOnlyAlertOnce(false);
-
-        final String errText = ec.getDesc(getResources());
-
-        if (ec.isSuccess() && someTimeElapsed) {
-            builder.setContentText(errText);
-        } else {
-            if (someTimeElapsed) {
-                builder.setContentText(getString(R.string.there_may_have_been_issues));
-
-                if (lastInvocation.killedForcefully)
-                    builder.setNumber(ec.getCode());
-                else {
-                    builder.setContentInfo('#' + ec.name())
-                            .setSubText(getString(R.string.expand_nf_to_see_details))
-                            .setStyle(new NotificationCompat.BigTextStyle().bigText(
-                                    getString(R.string.explanation, errText)));
-                }
-            } else if (!ec.isSuccess()) {
-                builder.setContentInfo('#' + ec.name())
-                        .setContentText(Character.toUpperCase(errText.charAt(0))
-                                + errText.substring(1));
-            }
-        }
-
-        return builder.build();
-    }
-
     private void reportNoNetwork() {
         // no binding check, because onStartCommand is called first
-        // TODO use
-        Toast.makeText(getApplicationContext(),
-                getText(R.string.will_start_later), Toast.LENGTH_LONG).show();
+        final Intent toastIntent = new Intent(ACTION_TOAST)
+                .setClassName(getPackageName(), "net.sf.aria2.PrivateReceiver")
+                .putExtra(EXTRA_TEXT, getText(R.string.will_start_later));
+
+        sendBroadcast(toastIntent);
     }
 
     private void updateNf() {
         if (bindingCounter == 0) {
             if (isRunning()) {
-                startForeground(-1, createNf());
+                startForeground(-1, persistentNf);
 
                 NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
 
-                nm.cancel(R.id.nf_stopped);
+                nm.cancel(R.id.nf_status);
             }
         } else stopForeground(true);
     }
@@ -350,9 +298,12 @@ public final class Aria2Service extends Service {
                 sendResult(false);
 
                 if (properties.showStoppedNf) {
-                    final Notification n = createStoppedNf(resultCode, didSomeWork());
-
-                    ((NotificationManager) getSystemService(NOTIFICATION_SERVICE)).notify(R.id.nf_stopped, n);
+                    final Intent nfIntent = new Intent(ACTION_NF_STOPPED)
+                            .setClassName(getPackageName(), "net.sf.aria2.PrivateReceiver")
+                            .putExtra(EXTRA_EXIT_CODE, resultCode)
+                            .putExtra(EXTRA_DID_WORK, didSomeWork())
+                            .putExtra(EXTRA_KILLED_FORCEFULLY, killedForcefully);
+                    sendBroadcast(nfIntent);
                 }
             }
             catch (IOException tooBad) {
@@ -453,7 +404,11 @@ class ProcessOutputHandler extends ContextWrapper implements Runnable {
                                         ? '…' + trimmedText.substring(trimmedText.length() - 299, trimmedText.length())
                                         : trimmedText;
 
-                                niceUiThreadHandler.post(() -> Toast.makeText(getApplicationContext(), finalText, Toast.LENGTH_LONG).show());
+                                final Intent finalIntent = new Intent(Aria2Service.ACTION_TOAST)
+                                        .setClassName(getPackageName(), "net.sf.aria2.PrivateReceiver")
+                                        .putExtra(Aria2Service.EXTRA_TEXT, errText);
+
+                                sendBroadcast(finalIntent);
                             }
                         }
                     }

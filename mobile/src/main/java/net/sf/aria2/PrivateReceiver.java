@@ -31,13 +31,39 @@
  */
 package net.sf.aria2;
 
+import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.text.TextUtils;
+import android.widget.Toast;
 
-public final class BootReceiver extends BroadcastReceiver {
+public final class PrivateReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
-        // TODO
+        final String action;
+        switch ((action = intent.getAction()) == null ? "" : action) {
+            case Aria2Service.ACTION_TOAST:
+                final String text =  intent.getStringExtra(Aria2Service.EXTRA_TEXT);
+
+                if (!TextUtils.isEmpty(text)) {
+                    Toast.makeText(context, text, Toast.LENGTH_LONG).show();
+                }
+
+                break;
+
+            case Aria2Service.ACTION_NF_STOPPED:
+                final int code = intent.getIntExtra(Aria2Service.EXTRA_EXIT_CODE, -1);
+                final boolean worked = intent.getBooleanExtra(Aria2Service.EXTRA_DID_WORK, false);
+                final boolean killed = intent.getBooleanExtra(Aria2Service.EXTRA_KILLED_FORCEFULLY, false);
+
+                if (code != -1) {
+                    final NotificationManager nm = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+
+                    nm.notify(R.id.nf_status, NfBuilder.createStoppedNf(context, code, worked, killed));
+                }
+
+                break;
+        }
     }
 }
