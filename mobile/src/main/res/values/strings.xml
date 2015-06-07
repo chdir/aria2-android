@@ -55,4 +55,5 @@
     <string name="error_inaccessible_dir">Please, set the proper directory!</string>
     <string name="error_empty_dir">Invalid download directory - set correct one</string>
     <string name="error_service_failure">Failed to start Aria2 remote service</string>
+    <string name="active_ended">"{1} active, {2} ended"</string>
 </resources>

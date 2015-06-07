@@ -58,7 +58,14 @@
             android:process=":aria2" />
 
         <receiver android:name=".PrivateReceiver"
-                  android:exported="false"/>
+                  android:exported="false">
+            <intent-filter>
+                <action android:name="net.sf.aria2.action.STARTED"/>
+                <action android:name="net.sf.aria2.action.FAILED"/>
+                <action android:name="net.sf.aria2.action.DOWNLOADED"/>
+                <action android:name="net.sf.aria2.action.SEEDED"/>
+            </intent-filter>
+        </receiver>
     </application>
 
 </manifest>

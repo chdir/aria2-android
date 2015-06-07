@@ -40,7 +40,6 @@ import android.preference.PreferenceManager;
 import android.text.TextUtils;
 
 import java.io.File;
-import java.io.IOException;
 
 public final class ConfigBuilder extends ContextWrapper {
     private final SharedPreferences prefs;
@@ -56,15 +55,17 @@ public final class ConfigBuilder extends ContextWrapper {
 
         final Intent intent = ariaConfig.putInto(serviceMoniker)
                 .putExtra(Config.EXTRA_INTERACTIVE, true)
-                .putExtra(Aria2Service.EXTRA_NOTIFICATION, NfBuilder.createSerivceNf(this));
+                .putExtra(Aria2Service.EXTRA_NOTIFICATION, NfBuilder.newSerivceNf(this).build());
 
         final String downloadDir = prefs.getString(getString(R.string.download_dir_pref), "");
         if (TextUtils.isEmpty(downloadDir))
             return null;
 
+        final String libDir = getApplicationInfo().nativeLibraryDir;
+
         String binaryName = Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP ? "aria2_PIC" : "aria2";
         binaryName = "lib" + binaryName + "_exec.so";
-        binaryName = new File(getApplicationInfo().nativeLibraryDir, binaryName).getAbsolutePath();
+        binaryName = new File(libDir, binaryName).getAbsolutePath();
 
         final File sessionFile = new File(downloadDir, ".aria2.session.gz");
 

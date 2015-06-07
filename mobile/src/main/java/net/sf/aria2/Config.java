@@ -42,6 +42,18 @@ import java.util.Arrays;
 import java.util.List;
 
 final class Config extends ArrayList<String> implements Parcelable {
+    static final String ACTION_DOWNLOAD_START = "net.sf.aria2.action.STARTED";
+    static final String ACTION_DOWNLOADED_OK = "net.sf.aria2.action.DOWNLOADED";
+    static final String ACTION_DOWNLOADED_ERR = "net.sf.aria2.action.FAILED";
+    static final String ACTION_SEEDING_END = "net.sf.aria2.action.SEEDED";
+
+    public static final String EXTRA_ACTIVE_DS = "net.sf.aria2.extra.ACTIVE";
+    public static final String EXTRA_ENDED_DS = "net.sf.aria2.extra.ENDED";
+    public static final String EXTRA_SEEDING_DS = "net.sf.aria2.extra.SEEDING";
+    public static final String EXTRA_FAILED_DS = "net.sf.aria2.extra.FAILED";
+
+    public static final String EXTRA_FAILED_PATH = "net.sf.aria2.extra.FAIL_URI";
+
     private static final String EXTRA_NAME = BuildConfig.APPLICATION_ID + ".config";
 
     // not using PreferenceActivity stuff because it's API stability is gross

@@ -49,7 +49,7 @@ tasks.addRule("NDK tasks") { String taskName ->
                 arch = 'arch-arm'
                 break
             default:
-                throw new UnsupportedOperationException(abi + " not supported!")
+                throw new UnsupportedOperationException("$abi not supported!")
         }
 
         def prepTask = taskName.replace("BuildAria2", "Prepare")

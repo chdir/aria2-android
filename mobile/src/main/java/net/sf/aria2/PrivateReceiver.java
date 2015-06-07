@@ -41,6 +41,8 @@ import android.widget.Toast;
 public final class PrivateReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
+        final NotificationManager nm = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+
         final String action;
         switch ((action = intent.getAction()) == null ? "" : action) {
             case Aria2Service.ACTION_TOAST:
@@ -58,10 +60,31 @@ public final class PrivateReceiver extends BroadcastReceiver {
                 final boolean killed = intent.getBooleanExtra(Aria2Service.EXTRA_KILLED_FORCEFULLY, false);
 
                 if (code != -1) {
-                    final NotificationManager nm = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-
-                    nm.notify(R.id.nf_status, NfBuilder.createStoppedNf(context, code, worked, killed));
+                    nm.notify(R.id.nf_status, NfBuilder.newAria2StoppedNf(context, code, worked, killed).build());
                 }
+
+                break;
+
+            case Config.ACTION_DOWNLOAD_START:
+                final int active = intent.getIntExtra(Config.EXTRA_ACTIVE_DS, -1);
+                final int done = intent.getIntExtra(Config.EXTRA_ENDED_DS, -1);
+                final int seeding = intent.getIntExtra(Config.EXTRA_SEEDING_DS, -1);
+
+                nm.notify(R.id.nf_status, NfBuilder.newDownloadProgressNf(context, active, done, seeding).build());
+
+                break;
+
+            case Config.ACTION_DOWNLOADED_ERR:
+                final int lastActive = intent.getIntExtra(Config.EXTRA_ACTIVE_DS, -1);
+                final int lastDone = intent.getIntExtra(Config.EXTRA_ENDED_DS, -1);
+                final int lastSeeding = intent.getIntExtra(Config.EXTRA_SEEDING_DS, -1);
+
+                nm.notify(R.id.nf_status, NfBuilder.newDownloadProgressNf(context, lastActive, lastDone, lastSeeding).build());
+
+                final int errors = intent.getIntExtra(Config.EXTRA_FAILED_DS, -1);
+                final String failedDownload = intent.getStringExtra(Config.EXTRA_FAILED_PATH);
+
+                nm.notify(R.id.nf_error, NfBuilder.newDownloadErrNf(context, failedDownload, errors).build());
 
                 break;
         }

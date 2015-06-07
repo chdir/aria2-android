@@ -1,7 +1,6 @@
 package net.sf.aria2;
 
 import android.annotation.SuppressLint;
-import android.app.Notification;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
@@ -10,7 +9,7 @@ import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.TaskStackBuilder;
 
 final class NfBuilder {
-    static Notification createSerivceNf(Context ctx) {
+    static NotificationCompat.Builder newSerivceNf(Context ctx) {
         @SuppressLint("InlinedApi")
         final Intent resultIntent = new Intent(ctx, MainActivity.class)
                 .putExtra(PreferenceActivity.EXTRA_SHOW_FRAGMENT, "net.sf.aria2.MainActivity$Aria2Preferences")
@@ -28,14 +27,15 @@ final class NfBuilder {
                 .setContentTitle("aria2 is running")
                 .setContentText("Touch to open settings")
                 .setContentIntent(contentIntent)
-                .setOnlyAlertOnce(true)
-                .build();
+                .setPriority(NotificationCompat.PRIORITY_MIN)
+                .setOngoing(true)
+                .setOnlyAlertOnce(true);
     }
 
-    static Notification createStoppedNf(Context ctx,
-                                         int exitCode,
-                                         boolean someTimeElapsed,
-                                         boolean killedForcefully) {
+    static NotificationCompat.Builder newAria2StoppedNf(Context ctx,
+                                          int exitCode,
+                                          boolean someTimeElapsed,
+                                          boolean killedForcefully) {
         final ExitCode ec = ExitCode.from(exitCode);
 
         final String title = someTimeElapsed
@@ -71,7 +71,28 @@ final class NfBuilder {
             }
         }
 
-        return builder.build();
+        return builder;
+    }
+
+    static NotificationCompat.Builder newDownloadProgressNf(Context context, int  active, int finished, int seeding) {
+        final NotificationCompat.Builder ncb = newSerivceNf(context)
+                .setContentInfo(context.getString(R.string.active_ended, active, finished));
+
+        if (active != 0 || seeding != 0)
+            ncb.setProgress(active + seeding + finished, finished, seeding != 0);
+
+        return ncb;
+    }
+
+    public static NotificationCompat.Builder newDownloadErrNf(Context context, String failed, int errorsTotal) {
+        return new NotificationCompat.Builder(context)
+                .setSmallIcon(R.drawable.ic_stat_fail)
+                .setTicker("A download has failed")
+                .setContentTitle("There are " + errorsTotal + " failed downloads")
+                .setContentText(failed)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setOngoing(false)
+                .setOnlyAlertOnce(false);
     }
 
     private NfBuilder() {}

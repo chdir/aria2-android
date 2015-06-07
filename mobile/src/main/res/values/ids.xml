@@ -3,4 +3,5 @@
     <item name="nf_status" type="id"/>
     <item name="customfactory_tag_id" type="id"/>
     <item name="ldr_frontends" type="id"/>
+    <item name="nf_error" type="id"/>
 </resources>
