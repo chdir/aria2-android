@@ -31,6 +31,7 @@
  */
 package net.sf.aria2;
 
+import android.app.IntentService;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.Service;
@@ -42,6 +43,7 @@ import android.net.NetworkInfo;
 import android.os.*;
 import android.os.Process;
 import android.support.annotation.Nullable;
+import android.support.v4.content.WakefulBroadcastReceiver;
 import android.text.TextUtils;
 import android.util.Log;
 import android.widget.Toast;
@@ -56,47 +58,37 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 public final class Aria2Service extends Service {
-    private static final String TAG = "aria2service";
-
     static final String EXTRA_NOTIFICATION = "net.sf.aria2.extra.NF";
 
     static final String ACTION_TOAST = "net.sf.aria2.action.TOAST";
     static final String EXTRA_TEXT = "net.sf.aria2.extra.TEXT";
 
-    static final String ACTION_NF_STOPPED = "net.sf.aria2.action.NOTIFY";
-    static final String EXTRA_EXIT_CODE = "net.sf.aria2.extra.EC";
-    static final String EXTRA_DID_WORK = "net.sf.aria2.extra.WORKED";
-    static final String EXTRA_KILLED_FORCEFULLY = "net.sf.aria2.extra.KILL";
-
     private Notification persistentNf;
-    private Binder link;
-    private Handler bgThreadHandler;
+    private Aria2Binder link;
     private HandlerThread reusableThread;
 
     private int bindingCounter;
-    private ResultReceiver backLink;
-
     private BroadcastReceiver receiver;
-
-    private AriaRunnable lastInvocation;
 
     @Override
     public void onCreate() {
         super.onCreate();
 
-        link = new Binder();
-
         reusableThread = new HandlerThread("aria2 handler thread");
         reusableThread.start();
 
-        bgThreadHandler = new Handler(reusableThread.getLooper());
+        link = new Aria2Binder(this, reusableThread.getLooper());
     }
 
     @Override
     public int onStartCommand(@Nullable Intent intent, int flags, int startId) {
-        if (isRunning())
+        if (link.isRunning())
             throw new IllegalStateException("Can not start aria2: running instance already exists!");
 
         if (intent == null) {
@@ -112,7 +104,7 @@ public final class Aria2Service extends Service {
         final ConnectivityManager cm = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
         final NetworkInfo ni = cm.getActiveNetworkInfo();
         if (ni != null && ni.isConnectedOrConnecting())
-            startAria2(Config.from(intent));
+            link.startAria2(Config.from(intent));
         else {
             if (intent.hasExtra(Config.EXTRA_INTERACTIVE))
                 reportNoNetwork();
@@ -124,7 +116,7 @@ public final class Aria2Service extends Service {
                                 intent.getBooleanExtra(ConnectivityManager.EXTRA_NO_CONNECTIVITY, false))
                             return;
 
-                        startAria2(Config.from(intent));
+                        link.startAria2(Config.from(intent));
 
                         unregisterReceiver(this);
                         receiver = null;
@@ -147,20 +139,12 @@ public final class Aria2Service extends Service {
             }
     }
 
-    private void startAria2(Config config) {
-        lastInvocation = new AriaRunnable(config);
-        bgThreadHandler.post(lastInvocation);
-    }
-
     @Override
     public void onDestroy() {
         unregisterOldReceiver();
 
-        if (isRunning()) {
-            // order the child process to quit
-            lastInvocation.stop();
-        }
-        // not using quitSafely, because it would cause the process to hang
+        link.close();
+
         reusableThread.quit();
 
         updateNf();
@@ -193,19 +177,6 @@ public final class Aria2Service extends Service {
         return true;
     }
 
-    private boolean isRunning() {
-        return lastInvocation != null && lastInvocation.isRunning();
-    }
-
-    private void sendResult(boolean state) {
-        if (backLink == null)
-            return;
-
-        Bundle b = new Bundle();
-        b.putSerializable(SimpleResultReceiver.OBJ, state);
-        backLink.send(0, b);
-    }
-
     private void reportNoNetwork() {
         // no binding check, because onStartCommand is called first
         final Intent toastIntent = new Intent(ACTION_TOAST)
@@ -217,7 +188,7 @@ public final class Aria2Service extends Service {
 
     private void updateNf() {
         if (bindingCounter == 0) {
-            if (isRunning()) {
+            if (link.isRunning()) {
                 startForeground(-1, persistentNf);
 
                 NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
@@ -226,25 +197,89 @@ public final class Aria2Service extends Service {
             }
         } else stopForeground(true);
     }
+}
 
-    private final class Binder extends IAria2.Stub {
-        @Override
-        public void askToStop() {
-            lastInvocation.stop();
-        }
+class Aria2Binder extends IAria2.Stub implements Closeable {
+    private static final String TAG = "aria2binder";
 
-        @Override
-        public void setResultReceiver(ResultReceiver backLink) {
-            Aria2Service.this.backLink = backLink;
-        }
+    static final String ACTION_NF_STOPPED = "net.sf.aria2.action.NOTIFY";
+    static final String EXTRA_EXIT_CODE = "net.sf.aria2.extra.EC";
+    static final String EXTRA_DID_WORK = "net.sf.aria2.extra.WORKED";
+    static final String EXTRA_KILLED_FORCEFULLY = "net.sf.aria2.extra.KILL";
 
-        @Override
-        public boolean isRunning() throws RemoteException {
-            return Aria2Service.this.isRunning();
-        }
+    private final AtomicReference<AriaRunnable> lastInvocation = new AtomicReference<>();
+    private final AtomicReference<ResultReceiver> backLink = new AtomicReference<>();
+
+    private final Context context;
+    private final Handler queueingHandler;
+
+    private volatile Runnable callback;
+
+    Aria2Binder(Context context, Looper queue) {
+        this.context = context.getApplicationContext();
+
+        queueingHandler = new Handler(queue);
     }
 
-    private final class AriaRunnable implements Runnable {
+    public synchronized void takeWakeLock(WorkSource workSource) {
+        final PowerManager pm = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
+    }
+
+    public synchronized void releaseWakeLock() {
+
+    }
+
+    @Override
+    public synchronized void askToStop() {
+        final AriaRunnable lastInstance = lastInvocation.get();
+
+        lastInstance.stop();
+    }
+
+    @Override
+    public synchronized void setResultReceiver(ResultReceiver backLink) {
+        this.backLink.set(backLink);
+    }
+
+    @Override
+    public synchronized boolean isRunning() {
+        final AriaRunnable lastInstance = lastInvocation.get();
+
+        return lastInstance != null && lastInstance.isRunning();
+    }
+
+    void startAria2(Config config) {
+        final AriaRunnable newRunnable;
+
+        lastInvocation.set(newRunnable = new AriaRunnable(config));
+
+        queueingHandler.post(newRunnable);
+    }
+
+    void sendResult(boolean state) {
+        final ResultReceiver backLink = this.backLink.get();
+        if (backLink == null)
+            return;
+
+        Bundle b = new Bundle();
+        b.putSerializable(SimpleResultReceiver.OBJ, state);
+        backLink.send(0, b);
+    }
+
+    @Override
+    public void close() {
+        // order the child process to quit
+        final AriaRunnable lastRunnable;
+        if ((lastRunnable = lastInvocation.getAndSet(null)) != null) {
+            lastRunnable.stop();
+        }
+
+        // cleanup to avoid any kinds of memory leaks
+        backLink.set(null);
+        callback = null;
+    }
+
+    private final class AriaRunnable extends ContextWrapper implements Runnable {
         private final Config properties;
         private final boolean delegateDisplay;
 
@@ -259,6 +294,8 @@ public final class Aria2Service extends Service {
         private volatile int pid;
 
         public AriaRunnable(Config properties) {
+            super(context);
+
             this.properties = properties;
 
             delegateDisplay = properties.useATE;
@@ -267,7 +304,7 @@ public final class Aria2Service extends Service {
         public void run() {
             startupTime = System.currentTimeMillis();
 
-            final File aria2dir = getFilesDir();
+            final File aria2dir = context.getFilesDir();
             final File ptmxFile = new File("/dev/ptmx");
 
             try (ParcelFileDescriptor ptmx = ParcelFileDescriptor.open(ptmxFile, ParcelFileDescriptor.MODE_READ_WRITE)) {
@@ -286,7 +323,7 @@ public final class Aria2Service extends Service {
 
                 sendResult(true);
 
-                final Thread slurper = new Thread(new ProcessOutputHandler(getApplicationContext(), ptmx,
+                final Thread slurper = new Thread(new ProcessOutputHandler(context, ptmx,
                         delegateDisplay, properties.showOutput));
 
                 slurper.start();
@@ -294,8 +331,6 @@ public final class Aria2Service extends Service {
                 final int resultCode = TermExec.waitFor(pid);
 
                 slurper.interrupt();
-
-                sendResult(false);
 
                 if (properties.showStoppedNf) {
                     final Intent nfIntent = new Intent(ACTION_NF_STOPPED)
@@ -311,9 +346,13 @@ public final class Aria2Service extends Service {
             } finally {
                 pid = -1;
 
-                stopSelf();
+                synchronized (Aria2Binder.this) {
+                    lastInvocation.set(null);
 
-                lastInvocation = null;
+                    sendResult(false);
+
+                    callback.run();
+                }
             }
         }
 
