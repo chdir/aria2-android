@@ -49,8 +49,10 @@ public class ApplicationLoader extends AsyncTaskLoader<Bundle> {
 
     @Override
     protected void onReset() {
-        if (receiver != null)
+        if (receiver != null) {
             getContext().unregisterReceiver(receiver);
+            receiver = null;
+        }
 
         super.onReset();
     }

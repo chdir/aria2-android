@@ -52,6 +52,7 @@ aria2 arguments) are missing. Stay tuned with development!
 TODO
 ==========
 - [ ] Communicate with daemon over RPC to provide some services on-fly.
+- [ ] Integrate basic wakelock/network lock support into the daemon, using websocket callbacks
 - [ ] Async DNS resolution is disabled (see [upstream notes][5]), and there does not seem to be an
 easy way to fix it in launcher besides using RPC to supply values during each network change
 (see above).
