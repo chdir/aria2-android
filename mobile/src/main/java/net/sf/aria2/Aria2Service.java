@@ -398,15 +398,13 @@ class ProcessOutputHandler extends ContextWrapper implements Runnable {
                                     .replaceAll("(?m)^$([\r\n]+?)(^$[\r\n]+?^)+", "$1");
 
                             if (!TextUtils.isEmpty(trimmedText)) {
-                                final Handler niceUiThreadHandler = new Handler(Looper.getMainLooper());
-
                                 final String finalText = trimmedText.length() > 300
                                         ? '…' + trimmedText.substring(trimmedText.length() - 299, trimmedText.length())
                                         : trimmedText;
 
                                 final Intent finalIntent = new Intent(Aria2Service.ACTION_TOAST)
                                         .setClassName(getPackageName(), "net.sf.aria2.PrivateReceiver")
-                                        .putExtra(Aria2Service.EXTRA_TEXT, errText);
+                                        .putExtra(Aria2Service.EXTRA_TEXT, finalText);
 
                                 sendBroadcast(finalIntent);
                             }
