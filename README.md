@@ -32,7 +32,8 @@ Building from sources
 ````bash
 git clone --recursive "https://github.com/Alexander--/aria2-android"
 cd aria2-android
-echo "/path/to/android-ndk" > local.properties
+export ANDROID_NDK="/path/to/android-ndk"
+echo "ndk.dir=/path/to/android-ndk" > local.properties
 ./gradlew renameExecutables
 ./gradlew assembleDebug
 ````
