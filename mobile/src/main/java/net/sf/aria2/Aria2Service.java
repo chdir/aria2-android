@@ -271,7 +271,7 @@ public final class Aria2Service extends Service {
             final File ptmxFile = new File("/dev/ptmx");
 
             try (ParcelFileDescriptor ptmx = ParcelFileDescriptor.open(ptmxFile, ParcelFileDescriptor.MODE_READ_WRITE)) {
-                final TermExec pBuilder = new TermExec(properties);
+                final TermExec pBuilder = new TermExec(properties.toCommand());
 
                 pBuilder.environment().put("HOME", aria2dir.getAbsolutePath());
 

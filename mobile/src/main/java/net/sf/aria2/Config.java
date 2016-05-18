@@ -34,14 +34,20 @@ package net.sf.aria2;
 import android.content.Intent;
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.text.TextUtils;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
-final class Config extends ArrayList<String> implements Parcelable {
+final class Config implements Parcelable {
     private static final String EXTRA_NAME = BuildConfig.APPLICATION_ID + ".config";
 
     // not using PreferenceActivity stuff because it's API stability is gross
@@ -50,21 +56,29 @@ final class Config extends ArrayList<String> implements Parcelable {
 
     static final String TAG = "aria2j";
 
+    private final Set<String> singularOptions = new LinkedHashSet<>(20);
+
+    File sessionDir;
+    File sessionFile;
+    File configFile;
+
+    String binaryName;
+
     boolean showStoppedNf;
 
     boolean useATE;
 
     boolean showOutput;
 
+    String secret;
+
     public Config() {
-        super(20);
-        addAll(Arrays.asList(
+        Collections.addAll(singularOptions,
                 "-c", "--enable-rpc", "--referer=*",
-                "--enable-color=false",
                 "--bt-save-metadata=true",
                 "--rpc-allow-origin-all=true",
                 "--rpc-save-upload-metadata=true",
-                "--save-session-interval=10"));
+                "--save-session-interval=10");
     }
 
     public Config setShowStoppedNf(boolean showStoppedNf) {
@@ -74,29 +88,16 @@ final class Config extends ArrayList<String> implements Parcelable {
 
     public Config setUseATE(boolean useATE) {
         this.useATE = useATE;
-
-        add("--show-console-readout=" + useATE);
-
-        if (!useATE) add("--summary-interval=0");
-
         return this;
     }
 
     public Config setShowOutput(boolean showOutput) {
         this.showOutput = showOutput;
-
-        if (!showOutput && !useATE) add("-q");
-
         return this;
     }
 
-    @SuppressWarnings("unchecked")
-    public Config(List list) {
-        super(list);
-    }
-
     public Intent putInto(Intent container) {
-        return container.putExtra(EXTRA_NAME, (Parcelable) this);
+        return container.putExtra(EXTRA_NAME, this);
     }
 
     @SuppressWarnings("unchecked")
@@ -105,7 +106,7 @@ final class Config extends ArrayList<String> implements Parcelable {
     }
 
     public Config setProcessname(String processname) {
-        add(0, processname);
+        binaryName = processname;
         return this;
     }
 
@@ -122,27 +123,58 @@ final class Config extends ArrayList<String> implements Parcelable {
             configFile.createNewFile();
         } catch (IOException ignored) {}
 
-        add("-d");
-        add(sessionParent.getAbsolutePath());
-
-        add("--save-session");
-        add(fileName);
-
-        add("--conf-path");
-        add(configFile.getAbsolutePath());
-
-        if (sessionFile.exists()) {
-            add("-i");
-            add(fileName);
-        }
+        sessionDir = sessionParent;
+        this.sessionFile = sessionFile;
+        this.configFile = configFile;
 
         return this;
     }
 
     public Config setRPCSecret(String secret) {
-        add("--rpc-secret");
-        add(secret);
+        this.secret = secret;
         return this;
+    }
+
+    @Override
+    public String toString() {
+        return Arrays.toString(toCommand());
+    }
+
+    public String[] toCommand() {
+        final ArrayList<String> options = new ArrayList<>(22);
+
+        options.add(binaryName);
+        options.addAll(singularOptions);
+
+        Collections.addAll(options, "-d", sessionDir.getAbsolutePath());
+        Collections.addAll(options, "--save-session", sessionFile.getAbsolutePath());
+        Collections.addAll(options, "--conf-path", configFile.getAbsolutePath());
+
+        if (sessionFile.exists()) {
+            Collections.addAll(options, "-i", sessionFile.getAbsolutePath());
+        }
+
+        if (!TextUtils.isEmpty(secret)) {
+            Collections.addAll(options, "--rpc-secret", secret);
+        }
+
+        if (!useATE) {
+            options.add("--show-console-readout=false");
+
+            options.add("--summary-interval=0");
+
+            if (!showOutput) {
+                options.add("-q");
+            }
+        } else {
+            options.add("--show-console-readout=true");
+        }
+
+        if (showOutput || !useATE) {
+            options.add("--enable-color=false");
+        }
+
+        return options.toArray(new String[options.size()]);
     }
 
     @Override
@@ -152,7 +184,9 @@ final class Config extends ArrayList<String> implements Parcelable {
 
     @Override
     public void writeToParcel(Parcel dest, int flags) {
-        dest.writeArray(toArray());
+        dest.writeString(binaryName);
+        dest.writeString(secret);
+        dest.writeString(sessionFile.getAbsolutePath());
         dest.writeValue(showStoppedNf);
         dest.writeValue(useATE);
         dest.writeValue(showOutput);
@@ -161,7 +195,10 @@ final class Config extends ArrayList<String> implements Parcelable {
     public static final Parcelable.Creator<Config> CREATOR = new Creator<Config>() {
         @Override
         public Config createFromParcel(Parcel source) {
-            return new Config(Arrays.asList(source.readArray(getClass().getClassLoader())))
+            return new Config()
+                    .setProcessname(source.readString())
+                    .setRPCSecret(source.readString())
+                    .setSessionPath(new File(source.readString()))
                     .setShowStoppedNf((Boolean) source.readValue(null))
                     .setUseATE((Boolean) source.readValue(null))
                     .setShowOutput((Boolean) source.readValue(null));
