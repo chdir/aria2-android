@@ -26,15 +26,17 @@ export PATH="$A2_TOOLCHAIN/bin:$PATH"
 
 cd aria2
 
+echo "$LDFLAGS" | grep  -q  "pie" && USE_PIE=true || USE_PIE=false
+
+export CFLAGS="-pipe"
+echo "$LDFLAGS" | grep  -q  "pie"  && { export CFLAGS="$CFLAGS -fpie -fPIE -Wl,--warn-shared-textrel -Wl,--fatal-warnings"; export A2_BIN="aria2_PIC"; } || export A2_BIN="aria2"
+echo "$A2_ABI" | grep  -q  "armeabi-v7a" && CFLAGS="$CFLAGS -march=armv7-a -mfloat-abi=softfp -mfpu=vfpv3-d16"
+echo "$A2_ABI" | grep  -q  "armeabi-v7a" && LDFLAGS="$LDFLAGS -march=armv7-a -Wl,--fix-cortex-a8"
+
 # workaround for autofences behavior
 sed -i "s/AM_GNU_GETTEXT_VERSION(\[0\.18])/AM_GNU_GETTEXT_VERSION([0.19])/g" configure.ac
 autoreconf -fvi
 #autopoint -f
-
-export CFLAGS="-pipe"
-echo "$LDFLAGS" | grep  -q  "pie"  && { export CFLAGS="$CFLAGS -fPIE"; export A2_BIN="aria2_PIC"; } || export A2_BIN="aria2"
-echo "$A2_ABI" | grep  -q  "armeabi-v7a" && CFLAGS="$CFLAGS -march=armv7-a -mfloat-abi=softfp -mfpu=vfpv3-d16"
-echo "$A2_ABI" | grep  -q  "armeabi-v7a" && LDFLAGS="$LDFLAGS -march=armv7-a -Wl,--fix-cortex-a8"
 
 sed -i '/\#undef EAI_ADDRFAMILY/a \#undef EAI_NODATA' src/getaddrinfo.h
 ./configure \
@@ -49,15 +51,20 @@ sed -i '/\#undef EAI_ADDRFAMILY/a \#undef EAI_NODATA' src/getaddrinfo.h
     --with-libcares --with-libcares-prefix="$A2_ROOT" \
     --with-libz --with-libz-prefix="$A2_TOOLCHAIN" \
     CXXFLAGS="-Os -g" \
-    CFLAGS="-Os -g" \
+    CFLAGS="-Os -g $CFLAGS" \
     CPPFLAGS="-DHAVE_GETTIMEOFDAY=1 -DHAVE_GETADDRINFO=1" \
     LDFLAGS="-L$A2_TOOLCHAIN/lib $LDFLAGS" \
     PKG_CONFIG_LIBDIR="$A2_ROOT/lib/pkgconfig" \
     ZLIB_LIBS="-lz" \
     ZLIB_CFLAGS="-I$A2_TOOLCHAIN/sysroot/usr/include"
+
 make clean && make
 
-# strip!
-"${A2_TOOLCHAIN}/bin/${A2_COMPILER}-strip" src/aria2c
+if [ $USE_PIE -a $A2_ABI = "x86" ]; then
+  # stripping everything has unwanted side-effect of adding text relocations to assembly routines
+  "${A2_TOOLCHAIN}/bin/${A2_COMPILER}-strip" -g -o src/aria2c-stripped src/aria2c
+else
+  "${A2_TOOLCHAIN}/bin/${A2_COMPILER}-strip" -o src/aria2c-stripped src/aria2c
+fi
 
-install -D src/aria2c "$A2_DEST/$A2_BIN"
+install -D src/aria2c-stripped "$A2_DEST/$A2_BIN"

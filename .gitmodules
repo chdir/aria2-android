@@ -13,3 +13,6 @@
 [submodule "ate"]
 	path = ate
 	url = git@github.com:jackpal/Android-Terminal-Emulator.git
+[submodule "webui"]
+	path = webui
+	url = git@github.com:chdir/webui-aria2.git

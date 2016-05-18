@@ -10,14 +10,13 @@ echo "$A2_ABI" | grep  -q  "armeabi-v7a" && CFLAGS="$CFLAGS -march=armv7-a -mflo
 echo "$A2_ABI" | grep  -q  "armeabi-v7a" && LDFLAGS="$LDFLAGS -march=armv7-a -Wl,--fix-cortex-a8"
 
 if [ "$_ANDROID_ARCH" == "arch-x86" ]; then
-	./Configure android-x86 -no-shared -no-comp -no-hw -no-engine --cross-compile-prefix="$CROSS_COMPILE" --openssldir="$A2_ROOT"
+    # disable CAST cipher, which seems to house a couple of stray text relocations
+	./Configure android-x86 -no-cast -no-comp -no-hw -no-engine --cross-compile-prefix="$CROSS_COMPILE" --openssldir="$A2_ROOT" $CFLAGS
 elif [ "$_ANDROID_ARCH" == "arch-mips" ]; then
-	./Configure android-mips -no-shared -no-comp -no-hw -no-engine --cross-compile-prefix="$CROSS_COMPILE" --openssldir="$A2_ROOT"
+	./Configure android-mips -no-shared -no-comp -no-hw -no-engine --cross-compile-prefix="$CROSS_COMPILE" --openssldir="$A2_ROOT" $CFLAGS
 else
-    ./Configure android-armv7 -no-shared -no-comp -no-hw -no-engine --cross-compile-prefix="$CROSS_COMPILE" --openssldir="$A2_ROOT"
+    ./Configure android-armv7 -no-shared -no-comp -no-hw -no-engine --cross-compile-prefix="$CROSS_COMPILE" --openssldir="$A2_ROOT" $CFLAGS
 fi
-
-# -Wl,--fix-cortex-a8"
 
 make clean
 make depend && make all && make install
