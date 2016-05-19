@@ -10,6 +10,7 @@
     <string name="transdroid_app_pref">transdroid</string>
     <string name="ate_app_pref">ate</string>
     <string name="use_ate_pref">use_ate</string>
+    <string name="token_pref">token</string>
     <string name="rpc_secret">123</string>
     <bool name="use_multipane">false</bool>
 

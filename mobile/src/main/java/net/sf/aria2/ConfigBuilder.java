@@ -40,7 +40,6 @@ import android.preference.PreferenceManager;
 import android.text.TextUtils;
 
 import java.io.File;
-import java.io.IOException;
 
 public final class ConfigBuilder extends ContextWrapper {
     private final SharedPreferences prefs;
@@ -74,9 +73,11 @@ public final class ConfigBuilder extends ContextWrapper {
 
         final boolean useATE = prefs.getBoolean(getString(R.string.use_ate_pref), false);
 
+        final String secretToken = prefs.getString(getString(R.string.token_pref), getString(R.string.rpc_secret));
+
         ariaConfig.setSessionPath(sessionFile)
                 .setProcessname(binaryName)
-                .setRPCSecret(getString(R.string.rpc_secret))
+                .setRPCSecret(secretToken)
                 .setShowStoppedNf(showNfs)
                 .setUseATE(useATE)
                 .setShowOutput(showOutput);

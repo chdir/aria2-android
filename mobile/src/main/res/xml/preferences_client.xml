@@ -18,10 +18,11 @@
                 android:title="@string/port"
                 android:summary="6800"/>
 
-        <Preference
-                android:key="token"
-                android:title="@string/secret_token"
-                android:summary="@string/rpc_secret"/>
+        <net.sf.aria2.util.SanePreference
+            android:defaultValue="@string/rpc_secret"
+            android:key="@string/token_pref"
+            android:title="@string/secret_token"
+            android:summary="Must be set in frontend"/>
     </PreferenceCategory>
 
     <PreferenceCategory android:title="@string/ate">
