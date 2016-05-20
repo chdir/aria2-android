@@ -1,61 +1,82 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="en-us">
   <head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <title>aria2 for Android by Alexander--</title>
-
-    <link rel="stylesheet" href="stylesheets/styles.css">
-    <link rel="stylesheet" href="stylesheets/github-light.css">
-    <script src="javascripts/scale.fix.js"></script>
-    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
-    <!--[if lt IE 9]>
-    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
-    <![endif]-->
+    <meta charset="UTF-8">
+    <title>aria2 for Android by chdir</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="stylesheets/normalize.css" media="screen">
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
   </head>
   <body>
-    <div class="wrapper">
-      <header>
-        <h1 class="header">aria2 for Android</h1>
-        <p class="header">aria2 port for Android devices</p>
+    <section class="page-header">
+      <h1 class="project-name">aria2 for Android</h1>
+      <h2 class="project-tagline">aria2 port for Android devices</h2>
+      <a href="https://github.com/chdir/aria2-android" class="btn">View on GitHub</a>
+      <a href="https://github.com/chdir/aria2-android/zipball/master" class="btn">Download .zip</a>
+      <a href="https://github.com/chdir/aria2-android/tarball/master" class="btn">Download .tar.gz</a>
+    </section>
 
-        <ul>
-          <li class="download"><a class="buttons" href="https://github.com/Alexander--/aria2-android/zipball/master">Download ZIP</a></li>
-          <li class="download"><a class="buttons" href="https://github.com/Alexander--/aria2-android/tarball/master">Download TAR</a></li>
-          <li><a class="buttons github" href="https://github.com/Alexander--/aria2-android">View On GitHub</a></li>
-        </ul>
+    <section class="main-content">
+      <h3>
+<a id="privacy-policy" class="anchor" href="#privacy-policy" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Privacy policy</h3>
 
-        <p class="header">This project is maintained by <a class="header name" href="https://github.com/Alexander--">Alexander--</a></p>
+<p>This privacy policy governs your use of the software application "aria2 for Android". The Application is a front-end (pluggable graphical user interface) for aria2 BitTorrent client (which is also included in distribution).</p>
 
+<p>Using aria2 to download files from Internet causes your device to contact a number of parties:</p>
 
-      </header>
-      <section>
-        <h3>
-<a id="using-this-app" class="anchor" href="#using-this-app" aria-hidden="true"><span class="octicon octicon-link"></span></a>Using this app</h3>
+<ul>
+<li>A number of specialized intermediary servers (also known as "torrent trackers");</li>
+<li>One or more of file-serving servers (in case of HTTP downloads and torrents with web-seeds);</li>
+<li>Unpredictable number of network hosts, some of which may participate in file exchange.</li>
+</ul>
 
-<p>This app does not prevent device from sleeping! During device sleep all downloads are greatly slowed and will most likely timeout. To prevent this for now you can use ATE integration and enable "Take WakeLock" and "Take WifiLock" in ATE menu when downloads are in process. Make sure to disable them afterwards, or you battery will discharge very quickly. A better solution will be provided in future.</p>
+<p>Those parties can gather some information about your device, your IP address, detect that your are using aria2, learn names and cryptographic hashes of files being transferred etc.</p>
 
-<p>If you want to use one of advanced features of aria2, you can try to edit it's configuration file (named aria2.txt, stored in the same directory as downloaded files). Consult aria2 manual for additional details on the matter: <a href="http://aria2.sourceforge.net/manual/en/html/index.html">http://aria2.sourceforge.net/manual/en/html/index.html</a></p>
+<p>All of above are integral features of network and file-sharing protocols, used by aria2. aria2 for Android does not collect or distribute any information about yourself, your device, downloaded files or any other information except for the purpose of implementing those protocols.</p>
 
-<h3>
-<a id="reporting-bugs" class="anchor" href="#reporting-bugs" aria-hidden="true"><span class="octicon octicon-link"></span></a>Reporting bugs</h3>
+<p>Any collection, transfer or exchange of that information happens automatically as part of your use of aria2 for Android. Your use of the Application is treated as an explicit consent for that.</p>
 
-<p>Use the <a href="https://sf.net/p/aria2-android/discussion/">project forum</a> to quickly send feedback and report bugs. No registration required, but there may be some spam (don't worry, I will respond to your messages anyway).</p>
+<p>Some information may be collected by Google as part of using their services, including Google Services and Google Play Store. That information is subject to Google's privacy policy.</p>
 
-<p>Use the Github bug tracker : <a href="https://github.com/Alexander--/aria2-android/issues">https://github.com/Alexander--/aria2-android/issues</a> to report issues directly. You will need a Github account (it's free, you don't have to be developer to register one). All general issues with aria2 (e.g. "I was banned from the tracker X, because of Y") should be reported to aria2 bug tracker instead : <a href="https://github.com/tatsuhiro-t/aria2/issues">https://github.com/tatsuhiro-t/aria2/issues</a>.</p>
+<p>Depending on your use of aria2 it may store some information on your device, including:</p>
 
-<p>You can contact me directly via mail, as listed on the Google Play page. This is undesirable, but still better, than posting rants in Google Play reviews.</p>
+<ul>
+<li>Information about previously contacted network peers (in file "dht.dat")</li>
+<li>Information about ongoing sessions</li>
+<li>Cached meta-data of torrents, downloaded by following "magnet" links</li>
+<li>Downloaded files themselves.</li>
+</ul>
 
-<h3>
-<a id="how-to-help" class="anchor" href="#how-to-help" aria-hidden="true"><span class="octicon octicon-link"></span></a>How to help</h3>
+<p>Depending on aria2 configuration, some of those files may be stored on storage accessible to other applications and other parties. Their actions towards that information is not subject to this privacy policy and aria2 for Android developers do not take any responsibility ###for them.</p>
 
-<p>You can help to translate this project on <a href="https://www.transifex.com/projects/p/aria2-android">Transifex</a>. You will need to register there. It is free, and you will be able to help with translating other open-source projects besides this. After joining the project team you will be able to update existing translation, as well as help to translate this app to other languages.</p>
-      </section>
-      <footer>
-        <p><small>Hosted on <a href="https://pages.github.com">GitHub Pages</a> using the Dinky theme</small></p>
+<p>You can stop all collection of information by the Application easily by uninstalling the Application. You may use the standard uninstall processes as may be available as part of your mobile device or via the mobile application marketplace or network.</p>
+
+<h4>
+<a id="disclaimer-of-responsibility" class="anchor" href="#disclaimer-of-responsibility" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Disclaimer of responsibility</h4>
+
+<p>aria2 for Android is provided <em>as-is</em> and <em>without any warranty</em>.</p>
+
+<p>It may contain programming bugs and vulnerabilities. Being a network-facing software, it may be used by remote attacker to exploit it's vulnerabilities and vulnerabilities of Android system to gain complete control over your device. By using the Application you are assuming complete responsibility for any consequences of such vulnerabilities.</p>
+
+<p>aria2 for Android is a tool for downloading files from Internet, completely ignorant of their contents and purpose. It does not contain any suggestive listings of files and can not be used without user-provided Universal Resource Identifiers of files. It does not encourage users to obtain such identifiers or assist them in doing so. Furthermore, use of aria2 for Android does not require registration or supplying any information about yourself to it's developers. As such, there is nothing, that can be done by it's developers to prevent any kind of irresponsible use, including use by under-aged auditory. If you'd like to prevent such use, you are strongly advised to halt any Internet access by your children.</p>
+
+<p>Furthermore, by using the Application, you are agreeing that any processing of your information, where "Processing,” means using or touching information in any way, including, but not limited to, collecting, storing, deleting, using, combining and disclosing information, is a direct result of your actions and can not be considered an act on behalf of developers of aria2.</p>
+
+<h4>
+<a id="policy-changes" class="anchor" href="#policy-changes" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Policy changes</h4>
+
+<p>This Privacy Policy may be updated from time to time for any reason. We will notify you of any changes to our Privacy Policy by posting the new Privacy Policy here. You are advised to consult this Privacy Policy regularly for any changes, as continued use is deemed approval of all changes.</p>
+
+      <footer class="site-footer">
+        <span class="site-footer-owner"><a href="https://github.com/chdir/aria2-android">aria2 for Android</a> is maintained by <a href="https://github.com/chdir">chdir</a>.</span>
+
+        <span class="site-footer-credits">This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the <a href="https://github.com/jasonlong/cayman-theme">Cayman theme</a> by <a href="https://twitter.com/jasonlong">Jason Long</a>.</span>
       </footer>
-    </div>
-    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
-		
+
+    </section>
+
+  
   </body>
 </html>
