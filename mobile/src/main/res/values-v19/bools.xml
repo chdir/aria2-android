@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+    Switching underlying engine of WebView in KitKat was so sudden, they
+    even broke their file picker dialog dialog integration…
+    -->
+    <bool name="allow_builtin_webview">false</bool>
+</resources>

@@ -56,8 +56,22 @@
             </intent-filter>
 
             <meta-data
-                    android:name="android.support.PARENT_ACTIVITY"
-                    android:value=".MainActivity"/>
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="net.sf.aria2.MainActivity"/>
+        </activity>
+
+        <activity
+            android:name=".JsFrontendActivity"
+            android:parentActivityName=".MainActivity"
+            android:hardwareAccelerated="false"
+            android:theme="@style/JsFrontendTheme"
+            android:label="@string/app_name"
+            android:configChanges="orientation|screenSize|keyboardHidden"
+            android:launchMode="singleInstance"
+            tools:ignore="UnusedAttribute">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="net.sf.aria2.MainActivity"/>
         </activity>
 
         <service

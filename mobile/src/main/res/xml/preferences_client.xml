@@ -1,6 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <PreferenceCategory android:title="Builtin frontend">
+        <Preference
+            android:key="@string/open_browser_pref"
+            android:title="Open web frontend">
+            <intent
+                android:action="android.intent.action.VIEW"
+                android:targetClass="net.sf.aria2.JsFrontendActivity"
+                android:targetPackage="net.sf.aria2"/>
+        </Preference>
+
+        <CheckBoxPreference
+            android:key="@string/external_browser_pref"
+            android:title="Use external browser"
+            android:summary="Open frontend in external browser"
+            android:defaultValue="@bool/prefer_external_browser"
+            android:enabled="@bool/allow_builtin_webview"
+            android:disableDependentsState="true"
+            >
+        </CheckBoxPreference>
+    </PreferenceCategory>
+
     <PreferenceCategory android:title="@string/transdroid">
+
         <Preference
                 android:key="@string/transdroid_app_pref"
                 android:title="@string/open_transdroid">

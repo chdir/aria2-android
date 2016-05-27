@@ -3,4 +3,7 @@
     <item name="nf_status" type="id"/>
     <item name="customfactory_tag_id" type="id"/>
     <item name="ldr_frontends" type="id"/>
+    <item name="req_file_chooser" type="id" />
+    <item name="req_from_nf" type="id" />
+    <item name="ldr_webui_setup" type="id" />
 </resources>

@@ -7,6 +7,8 @@
     <string name="download_dir_pref">download_dir</string>
     <string name="show_output_pref">show_output</string>
     <string name="show_nf_stopped_pref">show_nf_stopped</string>
+    <string name="external_browser_pref">use_external_browser</string>
+    <string name="open_browser_pref">builtin_frontend</string>
     <string name="transdroid_app_pref">transdroid</string>
     <string name="ate_app_pref">ate</string>
     <string name="use_ate_pref">use_ate</string>
@@ -22,4 +24,5 @@
     <string name="license_summary">GNU GPL v3</string>
     <string name="transdroid">Transdroid</string>
     <string name="ate_link">market://details?id=jackpal.androidterm</string>
+    <string name="error_info">error_text</string>
 </resources>

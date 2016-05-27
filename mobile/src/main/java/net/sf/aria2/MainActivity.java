@@ -35,6 +35,7 @@ import android.annotation.TargetApi;
 import android.app.*;
 import android.content.*;
 import android.os.*;
+import android.preference.CheckBoxPreference;
 import android.preference.Preference;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceFragment;
@@ -50,6 +51,7 @@ import android.widget.LinearLayout;
 import android.widget.Toast;
 import net.sf.aria2.loader.ApplicationLoader;
 import net.sf.aria2.loader.DownloadDirLoader;
+import net.sf.aria2.loader.FrontendSetupLoader;
 import net.sf.aria2.util.CalligraphyContextWrapper;
 import net.sf.aria2.util.CloseableHandler;
 import net.sf.aria2.util.SimpleResultReceiver;
@@ -215,6 +217,7 @@ public final class MainActivity extends PreferenceActivity {
         addPreferencesFromResource(R.xml.preferences_aria2);
         addPreferencesFromResource(R.xml.preferences_client);
         addPreferencesFromResource(R.xml.preferences_misc);
+
         serviceControl = new ServiceControl(this);
         serviceControl.init(getPreferenceScreen());
     }
@@ -279,7 +282,7 @@ public final class MainActivity extends PreferenceActivity {
         public void onActivityCreated(Bundle savedInstanceState) {
             super.onActivityCreated(savedInstanceState);
 
-            getLoaderManager().initLoader(R.id.ldr_frontends, new Bundle(), this);
+            getLoaderManager().initLoader(R.id.ldr_frontends, Bundle.EMPTY, this);
         }
 
         @Override
@@ -342,10 +345,11 @@ public final class MainActivity extends PreferenceActivity {
     }
 
     @TargetApi(HONEYCOMB)
-    public static class FrontendPreferences extends PreferenceFragment implements LoaderManager.LoaderCallbacks<Bundle> {
+    public static class FrontendPreferences extends PreferenceFragment implements LoaderManager.LoaderCallbacks<Bundle>, Preference.OnPreferenceChangeListener {
         private Preference atePref;
         private Preference useAtePref;
         private Preference trnsdroidPref;
+        private CheckBoxPreference useBrowserPref;
 
         @Override
         public void onCreate(Bundle savedInstanceState) {
@@ -358,23 +362,68 @@ public final class MainActivity extends PreferenceActivity {
 
             atePref.setEnabled(false);
             trnsdroidPref.setEnabled(false);
-            useAtePref.setEnabled(false);
+
+            useBrowserPref = (CheckBoxPreference) findPreference(getString(R.string.external_browser_pref));
+            useBrowserPref.setOnPreferenceChangeListener(this);
         }
 
         @Override
         public void onActivityCreated(Bundle savedInstanceState) {
             super.onActivityCreated(savedInstanceState);
 
-            getLoaderManager().initLoader(R.id.ldr_frontends, new Bundle(), this);
+            getLoaderManager().initLoader(R.id.ldr_frontends, Bundle.EMPTY, this);
+
+            if (useBrowserPref.isChecked()) {
+                useBrowserPref.setEnabled(false);
+
+                getLoaderManager().initLoader(R.id.ldr_webui_setup, Bundle.EMPTY, this);
+            }
         }
 
         @Override
         public Loader<Bundle> onCreateLoader(int id, Bundle args) {
-            return new ApplicationLoader(getActivity());
+            switch (id) {
+                case R.id.ldr_frontends:
+                    return new ApplicationLoader(getActivity());
+                case R.id.ldr_webui_setup:
+                    return new FrontendSetupLoader(getActivity());
+                default:
+                    throw new UnsupportedOperationException("Illegal loader id");
+            }
         }
 
         @Override
         public void onLoadFinished(Loader<Bundle> loader, Bundle data) {
+            switch (loader.getId()) {
+                case R.id.ldr_webui_setup:
+                    handleWebUiSetupEnd(data);
+                    return;
+                case R.id.ldr_frontends:
+                    handleFrontendInfo(data);
+                    return;
+                default:
+                    throw new UnsupportedOperationException("Illegal loader id");
+            }
+        }
+
+        private void handleWebUiSetupEnd(Bundle data) {
+            final boolean internalWebUiAllowed = getResources().getBoolean(R.bool.allow_builtin_webview);
+
+            if (internalWebUiAllowed) {
+                useBrowserPref.setEnabled(true);
+            }
+
+            if (data == null)
+                return;
+
+            final String errMsg = data.getString(getString(R.string.error_info));
+
+            if (errMsg != null) {
+                Toast.makeText(getActivity(), errMsg, Toast.LENGTH_LONG).show();
+            }
+        }
+
+        private void handleFrontendInfo(Bundle data) {
             Intent transdroidIntent = data.getParcelable(getString(R.string.transdroid_app_pref));
 
             if (transdroidIntent != null)
@@ -398,6 +447,17 @@ public final class MainActivity extends PreferenceActivity {
 
         @Override
         public void onLoaderReset(Loader<Bundle> loader) {}
+
+        @Override
+        public boolean onPreferenceChange(Preference preference, Object newValue) {
+            if (Boolean.TRUE.equals(newValue)) {
+                preference.setEnabled(false);
+
+                getLoaderManager().restartLoader(R.id.ldr_webui_setup, Bundle.EMPTY, this);
+            }
+
+            return true;
+        }
     }
 
     @TargetApi(HONEYCOMB)

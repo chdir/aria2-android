@@ -1,18 +1,14 @@
 package net.sf.aria2.loader;
 
 import android.annotation.TargetApi;
-import android.app.Activity;
 import android.content.AsyncTaskLoader;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.Loader;
 import android.content.pm.PackageManager;
-import android.database.Cursor;
 import android.os.Build;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
 import net.sf.aria2.R;
 
 @TargetApi(Build.VERSION_CODES.HONEYCOMB)

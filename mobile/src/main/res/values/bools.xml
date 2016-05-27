@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Can't test Android WebView before API level 14, most likely won't work -->
+    <bool name="allow_builtin_webview">false</bool>
+
+    <!--
+    WebView was not even updatable until level 16.
+    It can not be relied on until at least Lollipop
+    -->
+    <bool name="prefer_external_browser">true</bool>
+</resources>
