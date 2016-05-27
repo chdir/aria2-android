@@ -32,9 +32,15 @@
 package net.sf.aria2.util;
 
 import android.content.Context;
+import android.content.res.TypedArray;
 import android.util.AttributeSet;
 import android.view.View;
+import android.widget.Checkable;
+import android.widget.CompoundButton;
+
 import net.sf.aria2.R;
+
+import org.jraf.android.backport.switchwidget.Switch;
 import org.jraf.android.backport.switchwidget.SwitchPreference;
 
 /**
@@ -45,14 +51,38 @@ public class SaneSwitch extends SwitchPreference {
         super(context,  attrs, defStyleAttr);
     }
 
-    public SaneSwitch(Context context, AttributeSet attrs, int defStyleAttr) {
-        super(context, attrs, defStyleAttr);
+    /**
+     * Construct a new SwitchPreference with the given style options.
+     *
+     * @param context
+     *            The Context that will style this preference
+     * @param attrs
+     *            Style attributes that differ from the default
+     * @param defStyle
+     *            Theme attribute defining the default style options
+     */
+    public SaneSwitch(Context context, AttributeSet attrs, int defStyle) {
+        super(context, attrs, defStyle);
     }
 
+    /**
+     * Construct a new SwitchPreference with the given style options.
+     *
+     * @param context
+     *            The Context that will style this preference
+     * @param attrs
+     *            Style attributes that differ from the default
+     */
     public SaneSwitch(Context context, AttributeSet attrs) {
-        super(context, attrs);
+        this(context, attrs, org.jraf.android.backport.switchwidget.R.attr.asb_switchPreferenceStyle);
     }
 
+    /**
+     * Construct a new SwitchPreference with default style options.
+     *
+     * @param context
+     *            The Context that will style this preference
+     */
     public SaneSwitch(Context context) {
         super(context);
     }
@@ -75,9 +105,12 @@ public class SaneSwitch extends SwitchPreference {
     protected void onBindView(View view) {
         super.onBindView(view);
 
-        final View v = view.findViewById(R.id.switchWidget);
-        v.setFocusableInTouchMode(false);
-        v.setFocusable(false);
-        v.setClickable(false);
+        Switch checkableView = (Switch) view.findViewById(R.id.switchWidget);
+
+        if (checkableView != null) {
+            checkableView.setFocusableInTouchMode(false);
+            checkableView.setFocusable(false);
+            checkableView.setClickable(false);
+        }
     }
 }

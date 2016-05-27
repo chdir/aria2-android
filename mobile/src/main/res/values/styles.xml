@@ -11,6 +11,15 @@
         <item name="asb_switchPreferenceStyle">@style/Preference.SwitchPreference</item>
     </style>
 
+    <style name="JsFrontendTheme" parent="AppTheme"/>
+
+    <style name="Preference.SwitchPreference" parent="">
+        <item name="android:layout">@layout/pref_box</item>
+        <item name="android:widgetLayout">@layout/preference_widget_switch</item>
+        <item name="asb_switchTextOn">@string/switch_on</item>
+        <item name="asb_switchTextOff">@string/switch_off</item>
+    </style>
+
     <style name="Aria2Switch" parent="Widget.Holo.CompoundButton.Switch">
         <item name="asb_track">@drawable/aria2_switch_track_holo_light</item>
         <item name="asb_thumb">@drawable/aria2_switch_inner_holo_light</item>
