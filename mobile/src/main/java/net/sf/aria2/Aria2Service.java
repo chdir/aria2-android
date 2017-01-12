@@ -424,7 +424,7 @@ class ProcessOutputHandler extends ContextWrapper implements Runnable {
 
                                 String finalText = trimmedHeader.substring(0, startCutoff);
 
-                                if (endCutoff != -1 && endCutoff > startCutoff && trimmedHeader.length() - endCutoff > 10) {
+                                if (endCutoff != -1 && endCutoff >= startCutoff && trimmedHeader.length() - endCutoff > 10) {
                                     endCutoff = Math.max(trimmedHeader.length()- 200, endCutoff);
 
                                     finalText = finalText + '…' + trimmedHeader.substring(endCutoff);
