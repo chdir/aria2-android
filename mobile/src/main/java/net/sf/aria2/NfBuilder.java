@@ -42,11 +42,15 @@ final class NfBuilder {
                 ? ctx.getString(R.string.aria2_has_stopped)
                 : ctx.getString(R.string.aria2_has_failed_to_start);
 
+        final Intent i = new Intent(ctx, MainActivity.class);
+        final PendingIntent contentIntent = PendingIntent.getActivity(ctx, R.id.req_from_nf, i, PendingIntent.FLAG_UPDATE_CURRENT);
+
         final NotificationCompat.Builder builder = new NotificationCompat.Builder(ctx)
                 .setSmallIcon(R.drawable.ic_stat_a)
                 .setTicker(title)
                 .setContentTitle(title)
                 .setAutoCancel(true)
+                .setContentIntent(contentIntent)
                 .setOnlyAlertOnce(false);
 
         final String errText = ec.getDesc(ctx.getResources());
