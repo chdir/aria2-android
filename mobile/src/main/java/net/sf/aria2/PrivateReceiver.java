@@ -39,6 +39,8 @@ import android.text.TextUtils;
 import android.widget.Toast;
 
 public final class PrivateReceiver extends BroadcastReceiver {
+    private Toast lastShown;
+
     @Override
     public void onReceive(Context context, Intent intent) {
         final String action;
@@ -46,8 +48,13 @@ public final class PrivateReceiver extends BroadcastReceiver {
             case Aria2Service.ACTION_TOAST:
                 final String text =  intent.getStringExtra(Aria2Service.EXTRA_TEXT);
 
-                if (!TextUtils.isEmpty(text)) {
-                    Toast.makeText(context, text, Toast.LENGTH_LONG).show();
+                if (!TextUtils.isEmpty(text.trim())) {
+                    if (lastShown != null) {
+                        lastShown.cancel();
+                    }
+
+                    lastShown = Toast.makeText(context, text, Toast.LENGTH_LONG);
+                    lastShown.show();
                 }
 
                 break;

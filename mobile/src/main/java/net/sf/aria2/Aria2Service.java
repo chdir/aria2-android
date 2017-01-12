@@ -362,7 +362,9 @@ class ProcessOutputHandler extends ContextWrapper implements Runnable {
         long startupTime = System.currentTimeMillis();
 
         try {
-            try {
+            try (FileChannel fc = new ParcelFileDescriptor.AutoCloseInputStream(ptmx).getChannel()) {
+                final ByteBuffer lastLines = ByteBuffer.allocate(2048).order(ByteOrder.nativeOrder());
+
                 try {
                     final TermConnection conn;
 
@@ -374,33 +376,55 @@ class ProcessOutputHandler extends ContextWrapper implements Runnable {
                         }
                     }
                 } finally {
-                    final ByteBuffer lastLines = ByteBuffer.allocate(1024).order(ByteOrder.nativeOrder());
-                    try (FileChannel fc = new ParcelFileDescriptor.AutoCloseInputStream(ptmx).getChannel()) {
+                    String errHeader = null;
+
+                    try  {
                         int slurped;
                         do {
                             slurped = fc.read(lastLines);
 
-                            if (lastLines.position() == lastLines.limit() || slurped == -1)
-                                Log.v(Config.TAG, new String(lastLines.array(), 0, lastLines.position()));
+                            if (lastLines.position() == lastLines.limit() || slurped == -1) {
+                                if (errHeader == null) {
+                                    errHeader = new String(lastLines.array(), lastLines.arrayOffset(), lastLines.position());
+                                }
 
-                            if (lastLines.position() == lastLines.limit())
+                                Log.v(Config.TAG, new String(lastLines.array(), 0, lastLines.position()));
+                            }
+
+                            if (lastLines.position() == lastLines.limit()) {
                                 lastLines.clear();
+                            }
                         }
                         while (slurped != -1);
                     } finally {
-                        final String errText = new String(lastLines.array(), 0, lastLines.position());
-
-                        Log.d(Config.TAG, errText);
+                        if (errHeader == null) {
+                            errHeader = new String(lastLines.array(), 0, lastLines.position());
+                        }
 
                         if (showMumblings || (System.currentTimeMillis() - startupTime < 400)) {
                             // https://stackoverflow.com/questions/21165802
-                            final String trimmedText = errText.replaceAll("(?m)(^ *| +(?= |$))", "")
-                                    .replaceAll("(?m)^$([\r\n]+?)(^$[\r\n]+?^)+", "$1");
+                            final String trimmedHeader = errHeader.replaceAll("(?m)(^ *| +(?= |$))", "")
+                                    .replaceAll("(?m)^$([\r\n]+?)(^$[\r\n]+?^)+", "$1").trim();
 
-                            if (!TextUtils.isEmpty(trimmedText)) {
-                                final String finalText = trimmedText.length() > 300
-                                        ? '…' + trimmedText.substring(trimmedText.length() - 299, trimmedText.length())
-                                        : trimmedText;
+                            if (!TextUtils.isEmpty(trimmedHeader)) {
+                                int linebreak = 0;
+                                do {
+                                    linebreak = trimmedHeader.indexOf('\n', linebreak + 1);
+
+                                    if (linebreak == -1) break;
+                                } while (linebreak < 10);
+
+                                int startCutoff = Math.min(linebreak == -1 ? trimmedHeader.length() : linebreak, 200);
+
+                                int endCutoff = trimmedHeader.lastIndexOf('\n');
+
+                                String finalText = trimmedHeader.substring(0, startCutoff);
+
+                                if (endCutoff != -1 && endCutoff > startCutoff && trimmedHeader.length() - endCutoff > 10) {
+                                    endCutoff = Math.max(trimmedHeader.length()- 200, endCutoff);
+
+                                    finalText = finalText + '…' + trimmedHeader.substring(endCutoff);
+                                }
 
                                 final Intent finalIntent = new Intent(Aria2Service.ACTION_TOAST)
                                         .setClassName(getPackageName(), "net.sf.aria2.PrivateReceiver")
@@ -413,8 +437,6 @@ class ProcessOutputHandler extends ContextWrapper implements Runnable {
                 }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-            } finally {
-                ptmx.close();
             }
         } catch (IOException ignore) {}
     }
