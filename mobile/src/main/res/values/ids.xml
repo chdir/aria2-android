@@ -6,4 +6,6 @@
     <item name="req_file_chooser" type="id" />
     <item name="req_from_nf" type="id" />
     <item name="ldr_webui_setup" type="id" />
+    <item name="ldr_net_config" type="id" />
+    <item name="ldr_download_dir" type="id" />
 </resources>

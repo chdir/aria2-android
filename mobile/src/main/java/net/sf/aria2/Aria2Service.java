@@ -44,7 +44,7 @@ import android.os.Process;
 import android.support.annotation.Nullable;
 import android.text.TextUtils;
 import android.util.Log;
-import android.widget.Toast;
+
 import jackpal.androidterm.TermExec;
 import jackpal.androidterm.libtermexec.v1.ITerminal;
 import net.sf.aria2.util.SimpleResultReceiver;
@@ -276,6 +276,10 @@ public final class Aria2Service extends Service {
                 pBuilder.environment().put("HOME", aria2dir.getAbsolutePath());
 
                 pBuilder.command().add("--stop-with-process=" + android.os.Process.myPid());
+
+                if (properties.networkInterface != null) {
+                    pBuilder.command().add("--interface=" + properties.networkInterface);
+                }
 
                 Log.i(TAG, Arrays.toString(pBuilder.command().toArray()));
 

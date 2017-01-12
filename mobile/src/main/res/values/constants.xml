@@ -9,6 +9,8 @@
     <string name="show_nf_stopped_pref">show_nf_stopped</string>
     <string name="external_browser_pref">use_external_browser</string>
     <string name="open_browser_pref">builtin_frontend</string>
+    <string name="network_interface_pref">network_iface</string>
+    <string name="network_choice_strategy_pref">network_strategy</string>
     <string name="transdroid_app_pref">transdroid</string>
     <string name="ate_app_pref">ate</string>
     <string name="use_ate_pref">use_ate</string>

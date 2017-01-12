@@ -2,57 +2,227 @@
 <resources xmlns:tools="http://schemas.android.com/tools"
            tools:locale="en"
            tools:ignore="MissingTranslation">
-    <!-- preferences -->
+    <!--
+    The label for switch, that starts/stops aria2 background Service. Please, use a wording,
+    that does not suggest, that any kind of graphical feedback is going to be follow,
+    e.g. use 'start'/'run' as opposite to 'launch' or 'open'
+    -->
     <string name="enable_aria2_service">Start aria2</string>
+    <!--
+    Checking this checkbox allows small snippet (usually from the end) of aria2 output to be shown
+    via floating message after the aria2 process stops. This may be handy to debug some misc issues,
+    such as wrong options and does not really have other intended purpose
+    -->
     <string name="show_output">Show aria2 output</string>
+    <!--
+    The better wording would be more like 'working dir', but... aria2 will store all kinds of files
+    there, including downloads, it's DHT peer caches, session files... This is messy, but still
+    better than silently hiding all of those from user (and accelerating internal memory wear)
+    -->
     <string name="download_dir">Download directory</string>
+    <!--
+    See description of 'Download directory'. Shown below the later when it is not set (which should
+    not happen out of box anyway)
+    -->
     <string name="download_dir_summary">Also used for misc files</string>
+    <!--
+    Remaining space for downloaded files, shown below the 'Download directory' preference title
+    when the preference is set to valid, writable directory. Example: '180Gbs available'
+    -->
     <string name="space_available">%s available</string>
+
+    <!-- See description of 'Show aria2 output' -->
     <string name="show_output_summary">Display log when stopped</string>
+    <!--
+    Category title for Android notification preferences
+    -->
     <string name="notifications">Notifications</string>
+    <!--
+    Show notification when aria2 stops
+    -->
     <string name="nf_stopped">Notify when stopped</string>
+    <!--
+    A summary, shown below the title of 'Show notification when aria2 stops' preference.
+    This is my awkward attempt to hint it's intended purpose (since the notification may contain
+    an error message, derived from aria2 exit code)
+    -->
     <string name="nf_stopped_summary">May contain failure causes</string>
+    <!--
+    'Persistent notification' is a technical term, used by Android developers
+    to denote notifications, that can not be dismissed by user. This kind of notifications are
+    used, among other things, to prevent Android background processes from being mercilessly
+    restarted by system over and over, again and again (you can google for so-called
+    'foreground Services'). That is: the use of a persistent notification by aria2 is required
+    to made background downloading/seeding continuous without constantly yielding system resources
+    to oh-so-important graphical foreground applications. For this reason it can not be unchecked
+    at all. In fact it is there solely to let you know, that you *can not* disable that annoying
+    notification.
+    -->
     <string name="nf_persistent">Persistent notification</string>
+    <!--
+    See description of 'Persistent notification'
+    -->
     <string name="nf_persistent_summary">Prevents frequent restarts</string>
+    <!--
+    Network host, ex 'localhost', 'www.google.com' or '192.168.19.1'
+
+    Exposing aria2 remote control API to anything but local clients is a serious security disaster,
+    so this is set to 'localhost' and can not be changed.
+    -->
     <string name="host">Host</string>
+    <!--
+    Network port. See description of 'Host'
+
+    This is hard-coded for simplicity.
+    -->
     <string name="port">Port</string>
+    <!--
+    Used when some of related applications aren't installed, but may be available in Google Play
+    (or whatever is handling market:// links on your device). Clicking this will send a user
+    straight to the market app.
+    -->
     <string name="get_from_market">Download from Google Play</string>
     <string name="official_site">Official aria2 site</string>
     <string name="license">License</string>
     <string name="view_source_code">View source code</string>
+    <!--
+    Link to source code of 'aria2 for Android' on Github. If possible, make it clear, that it
+    links to *this* Android app, the code of aria2, WebUI and many other dependencies should
+    be obtained from their corresponding developers instead (but I got 'em as Git submodules in case
+    you care)
+    -->
     <string name="view_source_code_summary">View source code of this port on Github</string>
     <string name="pref_header_frontend">Frontend</string>
+    <!--
+    The title for generic 'other' section, which contains stuff, that does not fit anywhere else.
+    You can use 'misc', 'about application' etc. — whatever is more common in your language
+    -->
     <string name="pref_header_other">About</string>
 
     <!-- messages -->
     <string name="will_start_later">You need network connection to use aria2</string>
 
     <!-- notifications -->
+    <!--
+    Shown in notification
+    -->
     <string name="aria2_has_stopped">aria2 has stopped</string>
+    <!--
+    Shown in notification
+    -->
     <string name="aria2_has_failed_to_start">aria2 has failed to start</string>
 
+    <!--
+    Shown in notification (2nd line)
+    -->
     <string name="all_finished">All downloads finished</string>
+    <!--
+    Shown in notification (2nd line)
+    -->
     <string name="there_are_unfinished">Some downloads not finished</string>
+    <!--
+    Shown in notification (2nd line)
+    -->
     <string name="there_may_have_been_issues">There may have been issues</string>
+    <!--
+    Shown in notification (2nd line)
+    -->
     <string name="expand_nf_to_see_details">Expand notification to see details</string>
 
+    <!--
+    Used in 'explanation' template
+    -->
     <string name="other_err">an error when adding download</string>
+    <!--
+    Used in 'explanation' template
+    -->
     <string name="download_err">an error during download</string>
+    <!--
+    Extended summary, shown upon expanding the notification. %s will be replaced by the short error
+    description. There are a lot of those descriptions, see
+    https://github.com/aria2/aria2/tree/master/po. Some of them may by untranslated, so construct
+    your translation accordingly
+    -->
     <string name="explanation">
         aria2 has encountered one or more issues during this session. The last one reported back was: %s. You may try
         to look at your frontend for details.
     </string>
+    <!-- Android Terminal Emulator integration is basically a way to show aria2 output in external
+    Terminal Emulator application without showing without including entire terminal emulator in my
+    app. So far the only supported emulator is Android Terminal Emulator, but other terminal emulator
+    developers should be able to add the support for same interface easily (see corresponding AIDL
+    file in ATE source)
+    -->
     <string name="use_ate_title">ATE integration</string>
+    <!--
+    shown below 'ATE integration' preference title when ATE is installed
+    -->
     <string name="use_ate_summary">Open aria2 in ATE</string>
+    <!--
+    Really, just words 'Terminal Emulator'
+    -->
     <string name="ate">Terminal Emulator</string>
 
     <string name="open_ate">Open Terminal Emulator</string>
     <string name="open_transdroid">Open Transdroid</string>
+    <!--
+    Example: 'Transdroid is not installed'
+    -->
     <string name="is_not_installed">%s is not installed</string>
+    <!--
+    Example: 'ATE is installed'
+    -->
     <string name="is_installed">%s is installed</string>
 
+    <!--
+    Shown if you enter some nonsense in 'Download directory' preference
+    -->
     <string name="warning_inacccessible_dir">Warning: chosen download directory isn\'t available for writing</string>
+    <!--
+    Shown if you enter some nonsense in 'Download directory' preference
+    -->
     <string name="error_inaccessible_dir">Please, set the proper directory!</string>
+    <!--
+    Shown if you enter some nonsense in 'Download directory' preference
+    -->
     <string name="error_empty_dir">Invalid download directory - set correct one</string>
     <string name="error_service_failure">Failed to start Aria2 remote service</string>
+    <!--
+    Link to WebUI Github bug tracker
+    -->
+    <string name="webui_site">WebUI support site</string>
+
+    <!-- Header for "network" preference category, that contains things like preferred network type, address etc. -->
+    <string name="network">Network</string>
+
+    <!--
+    The title for network option, that allows to pick between three settings:
+    1) Use active network; if there are multiple active networks, the result is unpredictable and
+    some network will be picked picked by low-level C library
+    2) Use custom network specified by Linux network device name (eth0, wlan0), address or hostname
+    3) Use the network, determined by Android settings, e.g. the same as most other apps (available
+    only in versions after Android Marshmallow)
+    -->
+    <string name="network_choice">Network choice</string>
+    <!-- The summary line (see description of "network_choice") -->
+    <string name="network_choice_none_summary">@string/iface_not_set</string>
+    <!-- The summary line (see description of "network_choice") -->
+    <string name="network_choice_auto_summary">@string/iface_auto</string>
+
+    <!--
+    The title for network option, that allows to specify exact network line (see second option
+    in description of "network_choice"). This allows entering interface name ("eth0", "wlan0"),
+    IP address (192.168.11.1) or interface hostname (android-1234567812345678).
+    -->
+    <string name="network_name">Network interface</string>
+
+    <!-- The summary line (see description of "network_name") -->
+    <string name="network_name_summary">Interface name, IP or hostname</string>
+
+    <!-- summary shown when interface option is set to "Fixed interface", but the interface itself is not chosen -->
+    <string name="iface_not_set_summary">Please, set the interface below!</string>
+
+    <string name="iface_auto">Follow Android settings</string>
+    <string name="iface_not_set">Let aria2 decide</string>
+    <string name="iface_hardcoded">Manually specify interface</string>
 </resources>

@@ -31,26 +31,40 @@
  */
 package net.sf.aria2;
 
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.ContextWrapper;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.ConnectivityManager;
+import android.net.LinkAddress;
+import android.net.LinkProperties;
+import android.net.Network;
+import android.net.NetworkInfo;
 import android.os.Build;
 import android.preference.PreferenceManager;
+import android.support.annotation.NonNull;
 import android.text.TextUtils;
 
+import net.sf.aria2.util.InterfaceUtil;
+
 import java.io.File;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.util.List;
+
+import static net.sf.aria2.Config.CONFIG_FILE_NAME;
 
 public final class ConfigBuilder extends ContextWrapper {
-    private final SharedPreferences prefs;
+    private final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+
+    private final ConnectivityManager cm = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
 
     public ConfigBuilder(Context base) {
         super(base);
-
-        prefs = PreferenceManager.getDefaultSharedPreferences(base);
     }
 
-    public Intent constructServiceCommand(Intent serviceMoniker) {
+    public @NonNull Intent constructServiceCommand(Intent serviceMoniker) throws Exception {
         final Config ariaConfig = new Config();
 
         final Intent intent = ariaConfig.putInto(serviceMoniker)
@@ -59,7 +73,18 @@ public final class ConfigBuilder extends ContextWrapper {
 
         final String downloadDir = prefs.getString(getString(R.string.download_dir_pref), "");
         if (TextUtils.isEmpty(downloadDir))
-            return null;
+            throw new Exception(getString(R.string.error_empty_dir));
+
+
+        final NetworkInfo ni = cm.getActiveNetworkInfo();
+        if (ni == null || !ni.isConnected()) {
+            throw new Exception(getString(R.string.will_start_later));
+        }
+
+        final String networkInterface = getPreferredInterface();
+        if (!TextUtils.isEmpty(networkInterface)) {
+            ariaConfig.setNetworkInterface(networkInterface);
+        }
 
         String binaryName = Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP ? "aria2_PIC" : "aria2";
         binaryName = "lib" + binaryName + "_exec.so";
@@ -83,5 +108,66 @@ public final class ConfigBuilder extends ContextWrapper {
                 .setShowOutput(showOutput);
 
         return intent;
+    }
+
+    public static final int NET_UNSPECIFIED = 0;
+    public static final int NET_CUSTOM = 1;
+    public static final int NET_ACTIVE = 2;
+
+    private String getPreferredInterface() {
+        final int defStrategy = getResources().getInteger(R.integer.network_strategy);
+
+        final int networkConfig = Integer.parseInt(prefs.getString(getString(R.string.network_choice_strategy_pref), String.valueOf(defStrategy)));
+
+        switch (networkConfig) {
+            case NET_CUSTOM:
+                return getChosenInterface();
+            case NET_ACTIVE:
+                return getActiveInterface();
+            case NET_UNSPECIFIED:
+            default:
+                return null;
+        }
+    }
+
+    @TargetApi(Build.VERSION_CODES.M)
+    private String getActiveInterface() {
+        final Network network = cm.getActiveNetwork();
+
+        if (network == null) {
+            return null;
+        }
+
+        final LinkProperties linkInfo = cm.getLinkProperties(network);
+
+        if (linkInfo == null) {
+            return null;
+        }
+
+        final List<LinkAddress> linkAddress = linkInfo.getLinkAddresses();
+
+        if (linkAddress.isEmpty()) {
+            return null;
+        }
+
+        final InetAddress address = linkAddress.get(0).getAddress();
+
+        return address.getHostAddress();
+    }
+
+    private String getChosenInterface() {
+        final String ifName = prefs.getString(getString(R.string.network_interface_pref), null);
+
+        if (TextUtils.isEmpty(ifName)) {
+            return null;
+        }
+
+        final NetworkInterface resolved = InterfaceUtil.resolveInterfaceByName(ifName);
+
+        if (resolved == null) {
+            return ifName;
+        }
+
+        return InterfaceUtil.getInterfaceAddress(resolved);
     }
 }

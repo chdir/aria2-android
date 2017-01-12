@@ -110,10 +110,11 @@ public class DownloadDirLoader extends AsyncTaskLoader<Long> implements SharedPr
     {
         StatFs statFs = new StatFs(dir.getAbsolutePath());
         final long free;
-        if (Build.VERSION.SDK_INT >= 18)
+        if (Build.VERSION.SDK_INT >= 18) {
             free = statFs.getAvailableBlocksLong() * statFs.getBlockSizeLong();
-        else
+        } else {
             free = statFs.getAvailableBlocks() * statFs.getBlockSize();
+        }
 
         return free;
     }

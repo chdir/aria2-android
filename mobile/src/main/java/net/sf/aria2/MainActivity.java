@@ -34,6 +34,9 @@ package net.sf.aria2;
 import android.annotation.TargetApi;
 import android.app.*;
 import android.content.*;
+import android.net.ConnectivityManager;
+import android.net.LinkProperties;
+import android.net.Network;
 import android.os.*;
 import android.preference.CheckBoxPreference;
 import android.preference.Preference;
@@ -44,6 +47,7 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.NavUtils;
 import android.support.v4.app.TaskStackBuilder;
 import android.support.v7.widget.Toolbar;
+import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.view.View;
 import android.view.ViewGroup;
@@ -52,6 +56,7 @@ import android.widget.Toast;
 import net.sf.aria2.loader.ApplicationLoader;
 import net.sf.aria2.loader.DownloadDirLoader;
 import net.sf.aria2.loader.FrontendSetupLoader;
+import net.sf.aria2.loader.NetworkInterfaceLoader;
 import net.sf.aria2.util.CalligraphyContextWrapper;
 import net.sf.aria2.util.CloseableHandler;
 import net.sf.aria2.util.SimpleResultReceiver;
@@ -264,9 +269,11 @@ public final class MainActivity extends PreferenceActivity {
     }
 
     @TargetApi(HONEYCOMB)
-    public static class Aria2Preferences extends PreferenceFragment implements LoaderManager.LoaderCallbacks<Long> {
+    public static class Aria2Preferences extends PreferenceFragment implements LoaderManager.LoaderCallbacks<Object> {
         private ServiceControl serviceControl;
         private Preference dirPref;
+        private Preference networkStrategyPref;
+        private Preference networkIfacePref;
 
         @Override
         public void onCreate(Bundle savedInstanceState) {
@@ -276,13 +283,55 @@ public final class MainActivity extends PreferenceActivity {
             serviceControl.init(getPreferenceScreen());
 
             dirPref = findPreference(getString(R.string.download_dir_pref));
+            networkStrategyPref = findPreference(getString(R.string.network_choice_strategy_pref));
+            networkIfacePref = findPreference(getString(R.string.network_interface_pref));
+
+            networkStrategyPref.setOnPreferenceChangeListener((p, v) -> networkPrefChange(Integer.parseInt((String) v)));
+
+            initSummaries();
         }
 
         @Override
         public void onActivityCreated(Bundle savedInstanceState) {
             super.onActivityCreated(savedInstanceState);
 
-            getLoaderManager().initLoader(R.id.ldr_frontends, Bundle.EMPTY, this);
+            getLoaderManager().initLoader(R.id.ldr_download_dir, Bundle.EMPTY, this);
+            getLoaderManager().initLoader(R.id.ldr_net_config, Bundle.EMPTY, this);
+        }
+
+        private int getNetworkPrefValue() {
+            final SharedPreferences preferences = getPreferenceManager().getSharedPreferences();
+
+            final String defNetChoice = String.valueOf(getResources().getInteger(R.integer.network_strategy));
+
+            final String currentNetChoice = preferences.getString(getString(R.string.network_choice_strategy_pref), defNetChoice);
+
+            return Integer.parseInt(currentNetChoice);
+        }
+
+        private void initSummaries() {
+            networkPrefChange(getNetworkPrefValue());
+        }
+
+        private boolean networkPrefChange(int newSetting) {
+            switch (newSetting) {
+                case 0:
+                    networkStrategyPref.setSummary(R.string.network_choice_none_summary);
+                    networkIfacePref.setEnabled(false);
+                    break;
+                case 1:
+                    networkStrategyPref.setSummary(getString(R.string.iface_hardcoded));
+                    networkIfacePref.setEnabled(true);
+                    break;
+                case 2:
+                    networkStrategyPref.setSummary(R.string.network_choice_auto_summary);
+                    networkIfacePref.setEnabled(false);
+                    break;
+                default:
+                    throw new UnsupportedOperationException("Unknown network strategy: " + newSetting);
+            }
+
+            return true;
         }
 
         @Override
@@ -300,23 +349,41 @@ public final class MainActivity extends PreferenceActivity {
         }
 
         @Override
-        public Loader<Long> onCreateLoader(int id, Bundle args) {
-            return new DownloadDirLoader(getActivity());
-        }
-
-        @Override
-        public void onLoadFinished(Loader<Long> loader, Long data) {
-            if (data < 0) {
-                dirPref.setSummary(getString(R.string.error_inaccessible_dir));
-
-                Toast.makeText(getActivity(), getString(R.string.warning_inacccessible_dir), Toast.LENGTH_SHORT).show();
+        public Loader onCreateLoader(int id, Bundle args) {
+            switch (id) {
+                case R.id.ldr_net_config:
+                    return new NetworkInterfaceLoader(getActivity());
+                case R.id.ldr_download_dir:
+                    return new DownloadDirLoader(getActivity());
+                default:
+                    throw new UnsupportedOperationException("unknown loader id " + id);
             }
-            else
-                dirPref.setSummary(getString(R.string.space_available, bytesToHuman(data)));
         }
 
         @Override
-        public void onLoaderReset(Loader<Long> loader) {}
+        public void onLoadFinished(Loader<Object> loader, Object data) {
+            switch (loader.getId()) {
+                case R.id.ldr_download_dir:
+                    long byteCount = (long) data;
+
+                    if (byteCount < 0) {
+                        dirPref.setSummary(getString(R.string.error_inaccessible_dir));
+
+                        Toast.makeText(getActivity(), getString(R.string.warning_inacccessible_dir), Toast.LENGTH_SHORT).show();
+                    } else {
+                        dirPref.setSummary(getString(R.string.space_available, bytesToHuman(byteCount)));
+                    }
+                    break;
+                case R.id.ldr_net_config:
+                    Bundle bundle = (Bundle) data;
+                    final String outcome = bundle.getString(getString(R.string.network_interface_pref));
+                    networkIfacePref.setSummary(outcome);
+                    break;
+            }
+        }
+
+        @Override
+        public void onLoaderReset(Loader<Object> loader) {}
 
         private static String bytesToHuman (long size)
         {
@@ -563,11 +630,16 @@ final class ServiceControl extends ContextWrapper implements ServiceConnection {
                     setPrefEnabled(false);
                 }
             } else {
-                final Intent intent = new ConfigBuilder(this).constructServiceCommand(new Intent(sericeMoniker));
-                if (intent == null)
-                    Toast.makeText(this, getString(R.string.error_empty_dir), Toast.LENGTH_LONG).show();
-                else if (startService(intent) == null)
-                    setPrefEnabled(false);
+                final Intent intent;
+                try {
+                    intent = new ConfigBuilder(this)
+                            .constructServiceCommand(new Intent(sericeMoniker));
+
+                    if (startService(intent) == null)
+                        setPrefEnabled(false);
+                } catch (Exception e) {
+                    Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show();
+                }
             }
         }
 

@@ -48,6 +48,8 @@ import java.util.Map;
 import java.util.Set;
 
 final class Config implements Parcelable {
+    public static final String CONFIG_FILE_NAME = "aria2.txt";
+
     private static final String EXTRA_NAME = BuildConfig.APPLICATION_ID + ".config";
 
     // not using PreferenceActivity stuff because it's API stability is gross
@@ -63,6 +65,8 @@ final class Config implements Parcelable {
     File configFile;
 
     String binaryName;
+
+    String networkInterface;
 
     boolean showStoppedNf;
 
@@ -117,7 +121,7 @@ final class Config implements Parcelable {
         //noinspection ResultOfMethodCallIgnored
         sessionParent.mkdirs();
 
-        final File configFile = new File(sessionParent, "aria2.txt");
+        final File configFile = new File(sessionParent, CONFIG_FILE_NAME);
         //noinspection ResultOfMethodCallIgnored
         try {
             configFile.createNewFile();
@@ -132,6 +136,11 @@ final class Config implements Parcelable {
 
     public Config setRPCSecret(String secret) {
         this.secret = secret;
+        return this;
+    }
+
+    public Config setNetworkInterface(String networkInterface) {
+        this.networkInterface = networkInterface;
         return this;
     }
 
@@ -187,9 +196,10 @@ final class Config implements Parcelable {
         dest.writeString(binaryName);
         dest.writeString(secret);
         dest.writeString(sessionFile.getAbsolutePath());
-        dest.writeValue(showStoppedNf);
-        dest.writeValue(useATE);
-        dest.writeValue(showOutput);
+        dest.writeString(networkInterface);
+        dest.writeInt(showStoppedNf ? 1 : 0);
+        dest.writeInt(useATE ? 1 : 0);
+        dest.writeInt(showOutput ? 1 : 0);
     }
 
     public static final Parcelable.Creator<Config> CREATOR = new Creator<Config>() {
@@ -199,9 +209,10 @@ final class Config implements Parcelable {
                     .setProcessname(source.readString())
                     .setRPCSecret(source.readString())
                     .setSessionPath(new File(source.readString()))
-                    .setShowStoppedNf((Boolean) source.readValue(null))
-                    .setUseATE((Boolean) source.readValue(null))
-                    .setShowOutput((Boolean) source.readValue(null));
+                    .setNetworkInterface(source.readString())
+                    .setShowStoppedNf(source.readInt() != 0)
+                    .setUseATE(source.readInt() != 0)
+                    .setShowOutput(source.readInt() != 0);
         }
 
         @Override
