@@ -3,9 +3,10 @@
         <item name="colorPrimary">@color/primary</item>
         <item name="colorPrimaryDark">@color/primary_dark</item>
         <item name="colorAccent">@color/accent</item>
+        <item name="colorControlNormal">@color/primary_text</item>
 
-        <item name="android:textColorPrimary">@color/primary_text</item>
-        <item name="android:textColorSecondary">@color/secondary_text</item>
+        <item name="android:textColorPrimary">@drawable/text_primary</item>
+        <item name="android:textColorSecondary">@drawable/text_secondary</item>
 
         <item name="asb_switchStyle">@style/Aria2Switch</item>
         <item name="asb_switchPreferenceStyle">@style/Preference.SwitchPreference</item>
