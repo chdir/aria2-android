@@ -46,6 +46,7 @@
             android:defaultValue=""
             android:key="@string/network_interface_pref"
             android:title="@string/network_name"
+            android:dialogMessage="@string/ip_or_if_name"
             android:summary="@string/network_name_summary"/>
     </PreferenceCategory>
 </PreferenceScreen>

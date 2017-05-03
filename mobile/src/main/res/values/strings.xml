@@ -225,4 +225,9 @@
     <string name="iface_auto">Follow Android settings</string>
     <string name="iface_not_set">Let aria2 decide</string>
     <string name="iface_hardcoded">Manually specify interface</string>
+    <string name="ip_or_if_name">IP address or interface name</string>
+    <string name="if_sel_header">None. Available:\u0020</string>
+    <string name="unable_to_get_if_info">unable to get network info</string>
+    <string name="no_address">no address</string>
+    <string name="no_connection">no connection</string>
 </resources>

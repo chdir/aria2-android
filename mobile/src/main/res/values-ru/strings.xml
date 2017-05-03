@@ -45,4 +45,9 @@
   <string name="error_inaccessible_dir">Каталог не доступен</string>
   <string name="error_empty_dir">Укажите корректный каталог для загрузок</string>
   <string name="error_service_failure">Запустить сервис aria2 не удалось</string>
+  <string name="ip_or_if_name">IP или имя интерфейса</string>
+  <string name="if_sel_header">Не выбран. Варианты:\u0020</string>
+  <string name="unable_to_get_if_info">ошибка получения данных</string>
+  <string name="no_address">адрес не известен</string>
+  <string name="no_connection">нет сети</string>
 </resources>

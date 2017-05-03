@@ -46,6 +46,10 @@ public final class InterfaceUtil {
             }
 
             Enumeration<NetworkInterface>  interfaces = NetworkInterface.getNetworkInterfaces();
+            if (interfaces == null) {
+                return null;
+            }
+
             while (interfaces.hasMoreElements()) {
                 NetworkInterface ifc = interfaces.nextElement();
 

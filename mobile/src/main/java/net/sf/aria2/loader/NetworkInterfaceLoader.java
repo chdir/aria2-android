@@ -52,6 +52,8 @@ import net.sf.aria2.R;
 import net.sf.aria2.util.InterfaceUtil;
 
 import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.util.Enumeration;
 
 @TargetApi(Build.VERSION_CODES.HONEYCOMB)
 public class NetworkInterfaceLoader extends AsyncTaskLoader<Bundle> implements SharedPreferences.OnSharedPreferenceChangeListener {
@@ -140,7 +142,7 @@ public class NetworkInterfaceLoader extends AsyncTaskLoader<Bundle> implements S
         final NetworkInfo network = cm.getActiveNetworkInfo();
 
         if (network == null) {
-            result.putString(ctx.getString(R.string.network_interface_pref), "no connection");
+            result.putString(ctx.getString(R.string.network_interface_pref), ctx.getString(R.string.no_connection));
 
             return result;
         }
@@ -151,21 +153,59 @@ public class NetworkInterfaceLoader extends AsyncTaskLoader<Bundle> implements S
 
         NetworkInterface iface = InterfaceUtil.resolveInterfaceByName(ifacePref);
 
-        String resolved;
+        String resolved = null;
 
         if (iface == null) {
-            final String err = "unable to get network info";
+            if (TextUtils.isEmpty(ifacePref)) {
+                resolved = composeHint(ctx);
+            }
 
-            resolved = TextUtils.isEmpty(ifacePref) ? err: ifacePref + ": " + err;
+            if (TextUtils.isEmpty(resolved)) {
+                final String err = ctx.getString(R.string.unable_to_get_if_info);
+
+                resolved = TextUtils.isEmpty(ifacePref) ? err : ifacePref + ": " + err;
+            }
         } else {
             final String addr = InterfaceUtil.getInterfaceAddress(iface);
 
-            resolved = ifacePref + ": " + addr;
+            resolved = ifacePref + ": " + (addr == null ? ctx.getString(R.string.no_address) : addr);
         }
 
         result.putString(ctx.getString(R.string.network_interface_pref), resolved);
 
         return result;
+    }
+
+    private String composeHint(Context ctx) {
+        Enumeration<NetworkInterface> interfaces;
+        try {
+            interfaces = NetworkInterface.getNetworkInterfaces();
+
+            if (interfaces == null) {
+                return null;
+            }
+
+            final StringBuilder builder = new StringBuilder();
+
+            while (interfaces.hasMoreElements()) {
+                NetworkInterface ifc = interfaces.nextElement();
+
+                if (!ifc.isLoopback()) {
+                    builder.append(ifc.getName());
+                    builder.append(", ");
+                }
+            }
+
+            if (builder.length() != 0) {
+                builder.delete(builder.length() - 2, builder.length());
+                builder.insert(0, ctx.getString(R.string.if_sel_header));
+                return builder.toString();
+            }
+        } catch (SocketException e) {
+            // ok
+        }
+
+        return null;
     }
 
     @TargetApi(Build.VERSION_CODES.M)
@@ -177,7 +217,7 @@ public class NetworkInterfaceLoader extends AsyncTaskLoader<Bundle> implements S
         final Network network = cm.getActiveNetwork();
 
         if (network == null) {
-            result.putString(context.getString(R.string.network_interface_pref), "no connection");
+            result.putString(context.getString(R.string.network_interface_pref), context.getString(R.string.no_connection));
 
             return result;
         }
@@ -194,7 +234,7 @@ public class NetworkInterfaceLoader extends AsyncTaskLoader<Bundle> implements S
             String explanation = amm.getReason();
 
             if (TextUtils.isEmpty(explanation)) {
-                final String err = "unable to get network info";
+                final String err = context.getString(R.string.unable_to_get_if_info);
 
                 explanation = TextUtils.isEmpty(interfaceName) ? err: interfaceName + ": " + err;
             }
