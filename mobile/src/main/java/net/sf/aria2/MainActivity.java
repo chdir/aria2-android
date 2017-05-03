@@ -633,7 +633,8 @@ final class ServiceControl extends ContextWrapper implements ServiceConnection {
                 final Intent intent;
                 try {
                     intent = new ConfigBuilder(this)
-                            .constructServiceCommand(new Intent(sericeMoniker));
+                            .constructServiceCommand(new Intent(sericeMoniker))
+                            .putExtra(Config.EXTRA_INTERACTIVE, true);
 
                     if (startService(intent) == null)
                         setPrefEnabled(false);

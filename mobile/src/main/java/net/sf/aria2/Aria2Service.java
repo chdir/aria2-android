@@ -31,6 +31,7 @@
  */
 package net.sf.aria2;
 
+import android.annotation.SuppressLint;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.Service;
@@ -57,6 +58,10 @@ import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
 import java.util.*;
 
+import static net.sf.aria2.PublicReceiver.INTENT_RESTART_SERVICE;
+import static net.sf.aria2.PublicReceiver.INTENT_START_SERVICE;
+import static net.sf.aria2.PublicReceiver.INTENT_STOP_SERVICE;
+
 public final class Aria2Service extends Service {
     private static final String TAG = "aria2service";
 
@@ -78,7 +83,7 @@ public final class Aria2Service extends Service {
     private int bindingCounter;
     private ResultReceiver backLink;
 
-    private BroadcastReceiver receiver;
+    private Handler exitHandler;
 
     private AriaRunnable lastInvocation;
 
@@ -86,80 +91,88 @@ public final class Aria2Service extends Service {
     public void onCreate() {
         super.onCreate();
 
+        foreground = false;
+
         link = new Binder();
 
         reusableThread = new HandlerThread("aria2 handler thread");
         reusableThread.start();
 
         bgThreadHandler = new Handler(reusableThread.getLooper());
+
+        exitHandler = new Handler();
     }
 
     @Override
     public int onStartCommand(@Nullable Intent intent, int flags, int startId) {
-        if (isRunning())
-            throw new IllegalStateException("Can not start aria2: running instance already exists!");
-
+        // handle emergency restarts
         if (intent == null) {
             stopSelf();
 
             return START_NOT_STICKY;
         }
 
-        persistentNf = intent.getParcelableExtra(EXTRA_NOTIFICATION);
+        final String action = intent.getAction();
 
-        unregisterOldReceiver();
+        switch (action == null ? "" : action) {
+            case INTENT_STOP_SERVICE:
+                stopSelf(startId);
+
+                stopAria2();
+
+                return START_NOT_STICKY;
+
+            case INTENT_RESTART_SERVICE:
+                stopAria2();
+
+                startAria2(Config.from(intent), startId);
+
+                return START_NOT_STICKY;
+
+            case INTENT_START_SERVICE:
+                if (isRunning()) {
+                    return START_NOT_STICKY;
+                }
+        }
+
+        if (isRunning())
+            throw new IllegalStateException("Can not start aria2: running instance already exists!");
+
+        persistentNf = intent.getParcelableExtra(EXTRA_NOTIFICATION);
 
         final ConnectivityManager cm = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
         final NetworkInfo ni = cm.getActiveNetworkInfo();
         if (ni != null && ni.isConnectedOrConnecting())
-            startAria2(Config.from(intent));
+            startAria2(Config.from(intent), startId);
         else {
             if (intent.hasExtra(Config.EXTRA_INTERACTIVE))
                 reportNoNetwork();
-            else {
-                receiver = new BroadcastReceiver() {
-                    @Override
-                    public void onReceive(Context context, Intent intent) {
-                        if (intent.hasExtra(ConnectivityManager.EXTRA_NO_CONNECTIVITY) &&
-                                intent.getBooleanExtra(ConnectivityManager.EXTRA_NO_CONNECTIVITY, false))
-                            return;
-
-                        startAria2(Config.from(intent));
-
-                        unregisterReceiver(this);
-                        receiver = null;
-                    }
-                };
-
-                registerReceiver(receiver, new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
-            }
         }
 
         return super.onStartCommand(intent, flags, startId);
     }
 
-    private void unregisterOldReceiver() {
-        if (receiver != null)
-            try {
-                unregisterReceiver(receiver);
-            } catch (Throwable t) {
-                // fuck you, Dianne and your bunch
-            }
+    private void startAria2(Config config, int startId) {
+        exitHandler.removeCallbacksAndMessages(null);
+        bgThreadHandler.removeCallbacksAndMessages(null);
+        lastInvocation = new AriaRunnable(config, startId);
+        bgThreadHandler.post(lastInvocation);
+        updateNf();
     }
 
-    private void startAria2(Config config) {
-        lastInvocation = new AriaRunnable(config);
-        bgThreadHandler.post(lastInvocation);
+    private void stopAria2() {
+        final AriaRunnable invocation = lastInvocation;
+
+        if (invocation != null) {
+            invocation.stop();
+        }
     }
 
     @Override
     public void onDestroy() {
-        unregisterOldReceiver();
+        // order the child process to quit
+        stopAria2();
 
-        if (isRunning()) {
-            // order the child process to quit
-            lastInvocation.stop();
-        }
         // not using quitSafely, because it would cause the process to hang
         reusableThread.quit();
 
@@ -215,22 +228,30 @@ public final class Aria2Service extends Service {
         sendBroadcast(toastIntent);
     }
 
+    private boolean foreground;
+
     private void updateNf() {
         if (bindingCounter == 0) {
-            if (isRunning()) {
+            if (isRunning() && !foreground) {
                 startForeground(-1, persistentNf);
+
+                foreground = true;
 
                 NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
 
                 nm.cancel(R.id.nf_status);
             }
-        } else stopForeground(true);
+        } else if (foreground) {
+            stopForeground(true);
+
+            foreground = false;
+        }
     }
 
     private final class Binder extends IAria2.Stub {
         @Override
         public void askToStop() {
-            lastInvocation.stop();
+            stopAria2();
         }
 
         @Override
@@ -247,6 +268,7 @@ public final class Aria2Service extends Service {
     private final class AriaRunnable implements Runnable {
         private final Config properties;
         private final boolean delegateDisplay;
+        private final int startId;
 
         // accessed from the bg thread only
         private long startupTime;
@@ -258,8 +280,9 @@ public final class Aria2Service extends Service {
         // accessed from both
         private volatile int pid;
 
-        public AriaRunnable(Config properties) {
+        public AriaRunnable(Config properties, int startId) {
             this.properties = properties;
+            this.startId = startId;
 
             delegateDisplay = properties.useATE;
         }
@@ -290,6 +313,8 @@ public final class Aria2Service extends Service {
 
                 sendResult(true);
 
+                exitHandler.post(Aria2Service.this::updateNf);
+
                 final Thread slurper = new Thread(new ProcessOutputHandler(getApplicationContext(), ptmx,
                         delegateDisplay, properties.showOutput));
 
@@ -315,9 +340,7 @@ public final class Aria2Service extends Service {
             } finally {
                 pid = -1;
 
-                stopSelf();
-
-                lastInvocation = null;
+                stopSelf(startId);
             }
         }
 
