@@ -40,6 +40,12 @@
     </PreferenceCategory>
 
     <PreferenceCategory android:title="@string/network">
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="@string/outside_access_pref"
+            android:title="@string/outside_access"
+            android:summary="@string/outside_access_summary"/>
+
         <ListPreference
             android:defaultValue="0"
             android:entries="@array/pref_net_choice_option_text"

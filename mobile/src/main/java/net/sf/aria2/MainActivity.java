@@ -274,6 +274,7 @@ public final class MainActivity extends PreferenceActivity {
         private Preference networkStrategyPref;
         private Preference networkIfacePref;
         private Preference wakelockPref;
+        private Preference securityPref;
 
         @Override
         public void onCreate(Bundle savedInstanceState) {
@@ -286,13 +287,30 @@ public final class MainActivity extends PreferenceActivity {
             networkStrategyPref = findPreference(getString(R.string.network_choice_strategy_pref));
             networkIfacePref = findPreference(getString(R.string.network_interface_pref));
             wakelockPref = findPreference(getString(R.string.use_wakelock_pref));
+            securityPref = findPreference(getString(R.string.outside_access_pref));
 
             dirPref.setOnPreferenceChangeListener((p, v) -> dirPrefChange());
             networkStrategyPref.setOnPreferenceChangeListener((p, v) -> networkPrefChange(Integer.parseInt((String) v)));
             wakelockPref.setOnPreferenceChangeListener((p, v) -> wakelockPrefChange((Boolean) v));
+            securityPref.setOnPreferenceChangeListener((p, v) -> outsideAccessChange((Boolean) v));
 
             initSummaries();
             checkWakelockPermission();
+        }
+
+        private boolean outsideAccessChange(boolean allowed) {
+            if (allowed) {
+                final String secretToken = getPreferenceManager()
+                        .getSharedPreferences()
+                        .getString(getString(R.string.token_pref), getString(R.string.rpc_secret));
+
+                if (secretToken.length() < 6) {
+                    Toast.makeText(getActivity(), R.string.token_too_short, Toast.LENGTH_SHORT).show();
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         private void checkWakelockPermission() {

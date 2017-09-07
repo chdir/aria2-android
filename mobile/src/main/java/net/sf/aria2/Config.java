@@ -76,6 +76,8 @@ final class Config implements Parcelable {
 
     boolean takeWakelock;
 
+    boolean listenAll;
+
     String secret;
 
     public Config() {
@@ -104,6 +106,11 @@ final class Config implements Parcelable {
 
     public Config setTakeWakelock(boolean takeWakelock) {
         this.takeWakelock = takeWakelock;
+        return this;
+    }
+
+    public Config setListenAll(boolean listenAll) {
+        this.listenAll = listenAll;
         return this;
     }
 
@@ -190,6 +197,10 @@ final class Config implements Parcelable {
             options.add("--enable-color=false");
         }
 
+        if (listenAll) {
+            options.add("--rpc-listen-all=true");
+        }
+
         return options.toArray(new String[options.size()]);
     }
 
@@ -208,6 +219,7 @@ final class Config implements Parcelable {
         dest.writeInt(useATE ? 1 : 0);
         dest.writeInt(showOutput ? 1 : 0);
         dest.writeInt(takeWakelock ? 1 : 0);
+        dest.writeInt(listenAll ? 1 : 0);
     }
 
     public static final Parcelable.Creator<Config> CREATOR = new Creator<Config>() {
@@ -221,7 +233,8 @@ final class Config implements Parcelable {
                     .setShowStoppedNf(source.readInt() != 0)
                     .setUseATE(source.readInt() != 0)
                     .setShowOutput(source.readInt() != 0)
-                    .setTakeWakelock(source.readInt() != 0);
+                    .setTakeWakelock(source.readInt() != 0)
+                    .setListenAll(source.readInt() != 0);
         }
 
         @Override

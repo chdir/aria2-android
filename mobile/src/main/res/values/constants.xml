@@ -29,4 +29,5 @@
     <string name="transdroid">Transdroid</string>
     <string name="ate_link">market://details?id=jackpal.androidterm</string>
     <string name="error_info">error_text</string>
+    <string name="outside_access_pref">outside_access</string>
 </resources>
