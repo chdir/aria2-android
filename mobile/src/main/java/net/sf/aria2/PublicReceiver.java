@@ -13,25 +13,27 @@ public final class PublicReceiver extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
         final String action = intent.getAction();
 
+        final ConfigBuilder builder = new ConfigBuilder(context);
+
         switch ((action == null ? "" : action)) {
             case INTENT_START_SERVICE:
                 try {
-                    final Intent serviceIntent = new ConfigBuilder(context)
+                    final Intent serviceIntent = builder
                             .constructServiceCommand(new Intent(context, Aria2Service.class))
                             .setAction(INTENT_START_SERVICE);
 
-                    context.startService(serviceIntent);
+                    builder.startForegroundCompat(serviceIntent);
                 } catch (Exception e) {
                     // nothing can be done…
                 }
                 break;
             case INTENT_RESTART_SERVICE:
                 try {
-                    final Intent serviceIntent = new ConfigBuilder(context)
+                    final Intent serviceIntent = builder
                             .constructServiceCommand(new Intent(context, Aria2Service.class))
                             .setAction(INTENT_RESTART_SERVICE);
 
-                    context.startService(serviceIntent);
+                    builder.startForegroundCompat(serviceIntent);
                 } catch (Exception e) {
                     // nothing can be done…
                 }
@@ -40,7 +42,7 @@ public final class PublicReceiver extends BroadcastReceiver {
                 final Intent serviceIntent = new Intent(context, Aria2Service.class)
                         .setAction(INTENT_STOP_SERVICE);
 
-                context.startService(serviceIntent);
+                builder.stopServiceCompat(serviceIntent);
         }
     }
 }

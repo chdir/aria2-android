@@ -173,4 +173,26 @@ public final class ConfigBuilder extends ContextWrapper {
 
         return InterfaceUtil.getInterfaceAddress(resolved);
     }
+
+    public void startForegroundCompat(Intent intent) {
+        if (Build.VERSION.SDK_INT < 26) {
+            startService(intent);
+        } else {
+            try {
+                startService(intent);
+            } catch (Throwable t) {
+                startForegroundService(intent);
+            }
+        }
+    }
+
+    public void stopServiceCompat(Intent intent) {
+        // This is quite hilarious, but documentation of stopService() indicates,
+        // that it is not exempt from silly Android 26 background restrictions,
+        // so our only recourse is to use the same approach (startServiceForeground) for stopping.
+        // In the worst case, this will cause the service to receive our message,
+        // promptly stop itself, then either get another start command (and dodge the ANR)
+        // or die to ANR like Android's bitch it is.
+        startForegroundCompat(intent);
+    }
 }
