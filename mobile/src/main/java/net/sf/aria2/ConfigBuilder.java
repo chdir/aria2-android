@@ -98,6 +98,8 @@ public final class ConfigBuilder extends ContextWrapper {
 
         final boolean useATE = prefs.getBoolean(getString(R.string.use_ate_pref), false);
 
+        final boolean takeWakelock = prefs.getBoolean(getString(R.string.use_wakelock_pref), false);
+
         final String secretToken = prefs.getString(getString(R.string.token_pref), getString(R.string.rpc_secret));
 
         ariaConfig.setSessionPath(sessionFile)
@@ -105,7 +107,8 @@ public final class ConfigBuilder extends ContextWrapper {
                 .setRPCSecret(secretToken)
                 .setShowStoppedNf(showNfs)
                 .setUseATE(useATE)
-                .setShowOutput(showOutput);
+                .setShowOutput(showOutput)
+                .setTakeWakelock(takeWakelock);
 
         return intent;
     }

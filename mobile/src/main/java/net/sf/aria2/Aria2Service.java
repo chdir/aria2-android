@@ -311,28 +311,33 @@ public final class Aria2Service extends Service {
                 if (pid <= 1)
                     return;
 
-                sendResult(true);
+                final PowerManager.WakeLock lock = takeLock(properties.takeWakelock);
+                try {
+                    sendResult(true);
 
-                exitHandler.post(Aria2Service.this::updateNf);
+                    exitHandler.post(Aria2Service.this::updateNf);
 
-                final Thread slurper = new Thread(new ProcessOutputHandler(getApplicationContext(), ptmx,
-                        delegateDisplay, properties.showOutput));
+                    final Thread slurper = new Thread(new ProcessOutputHandler(getApplicationContext(), ptmx,
+                            delegateDisplay, properties.showOutput));
 
-                slurper.start();
+                    slurper.start();
 
-                final int resultCode = TermExec.waitFor(pid);
+                    final int resultCode = TermExec.waitFor(pid);
 
-                slurper.interrupt();
+                    slurper.interrupt();
 
-                sendResult(false);
+                    sendResult(false);
 
-                if (properties.showStoppedNf) {
-                    final Intent nfIntent = new Intent(ACTION_NF_STOPPED)
-                            .setClassName(getPackageName(), "net.sf.aria2.PrivateReceiver")
-                            .putExtra(EXTRA_EXIT_CODE, resultCode)
-                            .putExtra(EXTRA_DID_WORK, didSomeWork())
-                            .putExtra(EXTRA_KILLED_FORCEFULLY, killedForcefully);
-                    sendBroadcast(nfIntent);
+                    if (properties.showStoppedNf) {
+                        final Intent nfIntent = new Intent(ACTION_NF_STOPPED)
+                                .setClassName(getPackageName(), "net.sf.aria2.PrivateReceiver")
+                                .putExtra(EXTRA_EXIT_CODE, resultCode)
+                                .putExtra(EXTRA_DID_WORK, didSomeWork())
+                                .putExtra(EXTRA_KILLED_FORCEFULLY, killedForcefully);
+                        sendBroadcast(nfIntent);
+                    }
+                } finally {
+                    releaseLock(lock);
                 }
             }
             catch (IOException tooBad) {
@@ -344,6 +349,34 @@ public final class Aria2Service extends Service {
             }
         }
 
+        private PowerManager.WakeLock takeLock(boolean locksEnabled) {
+            if (locksEnabled) {
+                try {
+                    final PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
+
+                    PowerManager.WakeLock lock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "aria2");
+
+                    lock.acquire();
+
+                    return lock;
+                } catch (RuntimeException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            return null;
+        }
+
+        private void releaseLock(PowerManager.WakeLock lock) {
+            if (lock == null) return;
+
+            try {
+                lock.release();
+            } catch (RuntimeException e) {
+                e.printStackTrace();
+            }
+        }
+
         private boolean didSomeWork() {
             return System.currentTimeMillis() - startupTime > 500;
         }
@@ -352,7 +385,7 @@ public final class Aria2Service extends Service {
             return pid > 1;
         }
 
-        void stop() {
+        synchronized void stop() {
             if (pid > 1) {
                 if (!warnedOnce) {
                     warnedOnce = true;

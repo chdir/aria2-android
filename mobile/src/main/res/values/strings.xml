@@ -15,6 +15,13 @@
     -->
     <string name="show_output">Show aria2 output</string>
     <!--
+    This setting causes aria2 to take a "wakelock". Wakelocks prevent device from sleeping,
+    and allow ongoing operation to proceed even after Android has entered energy-saving mode ­
+    at cost of drastically raising power consumption while to lock is held. Aria2 does not
+    release it's lock until it stops (even if there are no downloads in progress).
+    -->
+    <string name="use_wakelock">Take a wakelock</string>
+    <!--
     The better wording would be more like 'working dir', but... aria2 will store all kinds of files
     there, including downloads, it's DHT peer caches, session files... This is messy, but still
     better than silently hiding all of those from user (and accelerating internal memory wear)
@@ -33,6 +40,8 @@
 
     <!-- See description of 'Show aria2 output' -->
     <string name="show_output_summary">Display log when stopped</string>
+    <!-- See description of 'Take a wakelock' -->
+    <string name="use_wakelock_summary">Avoid sleep when running</string>
     <!--
     Category title for Android notification preferences
     -->

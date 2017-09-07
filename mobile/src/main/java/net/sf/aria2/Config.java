@@ -74,6 +74,8 @@ final class Config implements Parcelable {
 
     boolean showOutput;
 
+    boolean takeWakelock;
+
     String secret;
 
     public Config() {
@@ -97,6 +99,11 @@ final class Config implements Parcelable {
 
     public Config setShowOutput(boolean showOutput) {
         this.showOutput = showOutput;
+        return this;
+    }
+
+    public Config setTakeWakelock(boolean takeWakelock) {
+        this.takeWakelock = takeWakelock;
         return this;
     }
 
@@ -200,6 +207,7 @@ final class Config implements Parcelable {
         dest.writeInt(showStoppedNf ? 1 : 0);
         dest.writeInt(useATE ? 1 : 0);
         dest.writeInt(showOutput ? 1 : 0);
+        dest.writeInt(takeWakelock ? 1 : 0);
     }
 
     public static final Parcelable.Creator<Config> CREATOR = new Creator<Config>() {
@@ -212,7 +220,8 @@ final class Config implements Parcelable {
                     .setNetworkInterface(source.readString())
                     .setShowStoppedNf(source.readInt() != 0)
                     .setUseATE(source.readInt() != 0)
-                    .setShowOutput(source.readInt() != 0);
+                    .setShowOutput(source.readInt() != 0)
+                    .setTakeWakelock(source.readInt() != 0);
         }
 
         @Override

@@ -9,4 +9,5 @@
     <item name="ldr_net_config" type="id" />
     <item name="ldr_download_dir" type="id" />
     <item name="req_file_permission" type="id" />
+    <item name="req_wakelock_permission" type="id" />
 </resources>

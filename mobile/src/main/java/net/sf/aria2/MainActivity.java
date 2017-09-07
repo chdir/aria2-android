@@ -31,6 +31,7 @@
  */
 package net.sf.aria2;
 
+import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.*;
 import android.content.*;
@@ -63,6 +64,7 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 
+import static android.Manifest.permission.WAKE_LOCK;
 import static android.os.Build.VERSION_CODES.*;
 
 public final class MainActivity extends PreferenceActivity {
@@ -271,6 +273,7 @@ public final class MainActivity extends PreferenceActivity {
         private Preference dirPref;
         private Preference networkStrategyPref;
         private Preference networkIfacePref;
+        private Preference wakelockPref;
 
         @Override
         public void onCreate(Bundle savedInstanceState) {
@@ -282,11 +285,25 @@ public final class MainActivity extends PreferenceActivity {
             dirPref = findPreference(getString(R.string.download_dir_pref));
             networkStrategyPref = findPreference(getString(R.string.network_choice_strategy_pref));
             networkIfacePref = findPreference(getString(R.string.network_interface_pref));
+            wakelockPref = findPreference(getString(R.string.use_wakelock_pref));
 
             dirPref.setOnPreferenceChangeListener((p, v) -> dirPrefChange());
             networkStrategyPref.setOnPreferenceChangeListener((p, v) -> networkPrefChange(Integer.parseInt((String) v)));
+            wakelockPref.setOnPreferenceChangeListener((p, v) -> wakelockPrefChange((Boolean) v));
 
             initSummaries();
+            checkWakelockPermission();
+        }
+
+        private void checkWakelockPermission() {
+            if (!PermissionHelper.checkWakelockPermission(this)) {
+                // wakelock permission disabled, reflect this in preference display
+                getPreferenceManager()
+                        .getSharedPreferences()
+                        .edit()
+                        .putBoolean(getString(R.string.use_wakelock_pref), false)
+                        .apply();
+            }
         }
 
         @Override
@@ -309,6 +326,15 @@ public final class MainActivity extends PreferenceActivity {
 
         private void initSummaries() {
             networkPrefChange(getNetworkPrefValue());
+        }
+
+        @SuppressLint("NewApi")
+        private boolean wakelockPrefChange(boolean enabled) {
+            if (enabled && !PermissionHelper.checkWakelockPermission(this)) {
+                requestPermissions(new String[] { WAKE_LOCK }, R.id.req_wakelock_permission);
+            }
+
+            return true;
         }
 
         private boolean dirPrefChange() {
@@ -373,7 +399,7 @@ public final class MainActivity extends PreferenceActivity {
                     if (byteCount < 0) {
                         dirPref.setSummary(getString(R.string.error_inaccessible_dir));
 
-                        if (!StorageHelper.checkPermission(this)) {
+                        if (!PermissionHelper.checkStoragePermission(this)) {
                             Toast.makeText(getActivity(), getString(R.string.warning_inacccessible_dir), Toast.LENGTH_SHORT).show();
                         }
                     } else {

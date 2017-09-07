@@ -27,6 +27,9 @@
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_MEDIA_STORAGE" tools:ignore="ProtectedPermissions"/>
 
+    <uses-permission android:name="android.permission.WAKE_LOCK" android:maxSdkVersion="22" />
+    <uses-permission-sdk-23 android:name="android.permission.WAKE_LOCK" />
+
     <application
         android:allowBackup="true"
         android:icon="@drawable/ic_launcher"
