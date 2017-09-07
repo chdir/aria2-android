@@ -1,3 +1,6 @@
+[Google Play Releases](https://play.google.com/store/apps/details?id=net.sf.aria2)
+[Google Play Early Access](https://play.google.com/apps/testing/net.sf.aria2)
+
 Android port of aria2
 ==========
 This repository contains source code, required to build Android port of aria2 (x86 and armeabi
