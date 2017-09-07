@@ -34,20 +34,17 @@ package net.sf.aria2;
 import android.annotation.TargetApi;
 import android.app.*;
 import android.content.*;
-import android.net.ConnectivityManager;
-import android.net.LinkProperties;
-import android.net.Network;
 import android.os.*;
 import android.preference.CheckBoxPreference;
 import android.preference.Preference;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceFragment;
 import android.preference.PreferenceScreen;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.NavUtils;
 import android.support.v4.app.TaskStackBuilder;
 import android.support.v7.widget.Toolbar;
-import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.view.View;
 import android.view.ViewGroup;
@@ -286,6 +283,7 @@ public final class MainActivity extends PreferenceActivity {
             networkStrategyPref = findPreference(getString(R.string.network_choice_strategy_pref));
             networkIfacePref = findPreference(getString(R.string.network_interface_pref));
 
+            dirPref.setOnPreferenceChangeListener((p, v) -> dirPrefChange());
             networkStrategyPref.setOnPreferenceChangeListener((p, v) -> networkPrefChange(Integer.parseInt((String) v)));
 
             initSummaries();
@@ -311,6 +309,12 @@ public final class MainActivity extends PreferenceActivity {
 
         private void initSummaries() {
             networkPrefChange(getNetworkPrefValue());
+        }
+
+        private boolean dirPrefChange() {
+            getLoaderManager().restartLoader(R.id.ldr_download_dir, Bundle.EMPTY, this);
+
+            return true;
         }
 
         private boolean networkPrefChange(int newSetting) {
@@ -369,7 +373,9 @@ public final class MainActivity extends PreferenceActivity {
                     if (byteCount < 0) {
                         dirPref.setSummary(getString(R.string.error_inaccessible_dir));
 
-                        Toast.makeText(getActivity(), getString(R.string.warning_inacccessible_dir), Toast.LENGTH_SHORT).show();
+                        if (!StorageHelper.checkPermission(this)) {
+                            Toast.makeText(getActivity(), getString(R.string.warning_inacccessible_dir), Toast.LENGTH_SHORT).show();
+                        }
                     } else {
                         dirPref.setSummary(getString(R.string.space_available, bytesToHuman(byteCount)));
                     }
@@ -379,6 +385,17 @@ public final class MainActivity extends PreferenceActivity {
                     final String outcome = bundle.getString(getString(R.string.network_interface_pref));
                     networkIfacePref.setSummary(outcome);
                     break;
+            }
+        }
+
+        @Override
+        public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+            switch (requestCode) {
+                case R.id.req_file_permission:
+                    getLoaderManager().restartLoader(R.id.ldr_download_dir, Bundle.EMPTY, this);
+                    break;
+                default:
+                    super.onRequestPermissionsResult(requestCode, permissions, grantResults);
             }
         }
 

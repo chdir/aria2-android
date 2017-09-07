@@ -83,7 +83,7 @@ public class DownloadDirLoader extends AsyncTaskLoader<Long> implements SharedPr
     }
 
     @Override
-    @SuppressLint("CommitPrefEdits") // we are in background thread and want value to be propagated for real
+    @SuppressLint({"ApplySharedPref"}) // we are in background thread and want value to be propagated for real
     public Long loadInBackground() {
         final Context ctx = getContext();
 
