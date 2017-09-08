@@ -45,9 +45,26 @@
   <string name="error_inaccessible_dir">Каталог не доступен</string>
   <string name="error_empty_dir">Укажите корректный каталог для загрузок</string>
   <string name="error_service_failure">Запустить сервис aria2 не удалось</string>
+  <string name="network">Сеть</string>
   <string name="ip_or_if_name">IP или имя интерфейса</string>
   <string name="if_sel_header">Не выбран. Варианты:\u0020</string>
   <string name="unable_to_get_if_info">ошибка получения данных</string>
   <string name="no_address">адрес не известен</string>
   <string name="no_connection">нет сети</string>
+  <string name="use_wakelock">Держать процессор активным</string>
+  <string name="use_wakelock_summary">Предотвращает сон CPU на время работы aria2</string>
+  <string name="network_name">Сетевой интерфейс</string>
+  <string name="network_name_summary">Устройство, IP или имя хоста</string>
+  <string name="iface_not_set_summary">Выберите интерфейс!</string>
+  <string name="iface_auto">Использовать настройки Android</string>
+  <string name="iface_not_set">Позволить aria2 сделать выбор</string>
+  <string name="iface_hardcoded">Использовать указанный интерфейс</string>
+  <string name="outside_access_summary">Ознакомьтесь с документацией!</string>
+  <string name="token_too_short">Недостаточно длинный пароль! Для открытия сетевого доступа к aria2 установите токен длиной от 6 символов</string>
+  <string name="network_choice">Выбор сети</string>
+  <string name="network_choice_none_summary">@string/iface_not_set</string>
+  <string name="network_choice_auto_summary">@string/iface_auto</string>
+  <string name="outside_access">Доступ извне</string>
+  <string name="use_browser">Использовать браузер</string>
+  <string name="use_browser_summary">Открывать фронтенд во внешнем браузере</string>
 </resources>

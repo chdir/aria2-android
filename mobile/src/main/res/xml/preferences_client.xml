@@ -12,8 +12,8 @@
 
         <CheckBoxPreference
             android:key="@string/external_browser_pref"
-            android:title="Use external browser"
-            android:summary="Open frontend in external browser"
+            android:title="@string/use_browser"
+            android:summary="@string/use_browser_summary"
             android:defaultValue="@bool/prefer_external_browser"
             android:enabled="@bool/allow_builtin_webview"
             android:disableDependentsState="true"

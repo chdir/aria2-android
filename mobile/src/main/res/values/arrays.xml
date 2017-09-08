@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools"
-    tools:ignore="InconsistentArrays">
+    tools:ignore="InconsistentArrays,MissingTranslation">
 
     <string-array name="pref_net_choice_options">
         <item>0</item>

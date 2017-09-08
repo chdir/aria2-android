@@ -242,4 +242,6 @@
     <string name="outside_access">Allow external access</string>
     <string name="outside_access_summary">If set, has security implications</string>
     <string name="token_too_short">Secret token is too short, must be at least 6 characters long</string>
+    <string name="use_browser">Use external browser</string>
+    <string name="use_browser_summary">Open frontend in external browser</string>
 </resources>
