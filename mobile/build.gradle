@@ -1,7 +1,7 @@
 apply plugin: 'com.android.application'
 
-def aria2Version = '1.19.0'
-def ownVersion = '0.9.1'
+def aria2Version = '1.22.0'
+def ownVersion = '0.12'
 
 def props = new Properties()
 
@@ -19,7 +19,7 @@ repositories {
 
 android {
     compileSdkVersion 'android-26'
-    buildToolsVersion '23.0.3'
+    buildToolsVersion '25.0.2'
 
     if (props) {
         signingConfigs {
@@ -37,7 +37,7 @@ android {
         applicationId 'net.sf.aria2'
         minSdkVersion 9
         targetSdkVersion 23
-        versionCode 16 // bump by 3 per release
+        versionCode 27 // bump by 3 per release
         versionName "$ownVersion+u.$aria2Version"
     }
     splits {
@@ -88,7 +88,9 @@ dependencies {
     compile 'com.android.support:appcompat-v7:23.1.1'
     compile 'org.jraf:android-switch-backport:1.4.0'
     //compile 'com.android.support:preference-v7:23.3.0'
-    compile 'com.android.support:support-v4:23.1.1'
+
+    //noinspection GradleDependency,GradleCompatible
+    compile 'com.android.support:support-v4:22.1.1'
 }
 
 apply from: file("$projectDir/prepare-natives.gradle")
