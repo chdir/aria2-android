@@ -1,0 +1,40 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+  <!--preferences-->
+  <string name="enable_aria2_service">开启aria2</string>
+  <string name="show_output">显示aria2输出</string>
+  <string name="download_dir">下载文件夹</string>
+  <string name="download_dir_summary">可用于其它文件</string>
+  <string name="space_available">%s 可用</string>
+  <string name="show_output_summary">下载停止显示日志</string>
+  <string name="notifications">通知</string>
+  <string name="nf_stopped">完成后通知</string>
+  <string name="nf_persistent">持续通知</string>
+  <string name="nf_persistent_summary">防止频繁重启</string>
+  <string name="get_from_market">从Google商店下载</string>
+  <string name="official_site">访问aria2网站</string>
+  <string name="license">许可证</string>
+  <string name="view_source_code">查看源代码</string>
+  <string name="view_source_code_summary">从Github上查看源代码</string>
+  <string name="pref_header_frontend">界面</string>
+  <string name="pref_header_other">关于</string>
+  <!--messages-->
+  <string name="will_start_later">aria2需要开启网络</string>
+  <!--notifications-->
+  <string name="aria2_has_stopped">aria2已经停止</string>
+  <string name="aria2_has_failed_to_start">aria2未能启动</string>
+  <string name="explanation">
+aria2会话过程中有一个或多个错误。最后的报告是: %s。 你可以试着
+查看前端细节</string>
+  <string name="use_ate_title">整合终端模拟器</string>
+  <string name="use_ate_summary">终端模拟器中打开aria2</string>
+  <string name="ate">终端模拟器</string>
+  <string name="open_ate">打开终端模拟器</string>
+  <string name="open_transdroid">打开Transdroid</string>
+  <string name="is_not_installed">%s未安装</string>
+  <string name="is_installed">%s已安装</string>
+  <string name="warning_inacccessible_dir">警告：选择的下载目录不可写入</string>
+  <string name="error_inaccessible_dir">请设置正确的目录！</string>
+  <string name="error_empty_dir">无效的下载目录-请设置正确</string>
+  <string name="error_service_failure">无法启动Aria2远程服务</string>
+</resources>
