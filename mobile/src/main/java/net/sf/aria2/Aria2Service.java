@@ -31,7 +31,6 @@
  */
 package net.sf.aria2;
 
-import android.annotation.SuppressLint;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.Service;
@@ -318,7 +317,7 @@ public final class Aria2Service extends Service {
                     exitHandler.post(Aria2Service.this::updateNf);
 
                     final Thread slurper = new Thread(new ProcessOutputHandler(getApplicationContext(), ptmx,
-                            delegateDisplay, properties.showOutput));
+                            delegateDisplay, properties.showOutput), "aria2 output consumer");
 
                     slurper.start();
 
@@ -386,17 +385,19 @@ public final class Aria2Service extends Service {
         }
 
         synchronized void stop() {
+            int pid = this.pid;
+
             if (pid > 1) {
                 if (!warnedOnce) {
                     warnedOnce = true;
 
-                    Process.sendSignal(pid, 2); // SIGINT
+                    TermExec.sendSignal(pid, 2); // SIGINT
                 } else {
                     killedForcefully = true;
 
-                    pid = -1;
+                    TermExec.sendSignal(pid, Process.SIGNAL_KILL);
 
-                    Process.sendSignal(pid, Process.SIGNAL_KILL);
+                    this.pid = -1;
                 }
             }
         }
@@ -498,7 +499,8 @@ class ProcessOutputHandler extends ContextWrapper implements Runnable {
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
-        } catch (IOException ignore) {}
+        } catch (IOException ignore) {
+        }
     }
 
     private TermConnection rebind() {
