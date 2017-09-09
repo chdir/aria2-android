@@ -1,3 +1,5 @@
+[![Gitter chat](https://badges.gitter.im/gitterHQ/gitter.png)](https://gitter.im/aria2-android/Lobby)
+
 [Google Play: store page](https://play.google.com/store/apps/details?id=net.sf.aria2)
 
 [Google Play: early access builds](https://play.google.com/apps/testing/net.sf.aria2)
