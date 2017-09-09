@@ -1,7 +1,5 @@
 [![Gitter chat](https://badges.gitter.im/gitterHQ/gitter.png)](https://gitter.im/aria2-android/Lobby)
 
-[Google Play: store page](https://play.google.com/store/apps/details?id=net.sf.aria2) [Google Play: early access builds](https://play.google.com/apps/testing/net.sf.aria2)
-
 Android port of aria2
 ==========
 This repository contains source code, required to build Android port of aria2 (x86 and armeabi
@@ -9,6 +7,9 @@ architectures, both PIC and non-PIC). The port includes frontend application and
 written in Java, as well as binaries of aria2, cross-compiled for above-listed architectures.
 For details of how those binaries are launched by the Android application see manual of
 [RootCommands][1] (no root access is needed).
+
+[Google Play: store page](https://play.google.com/store/apps/details?id=net.sf.aria2)
+[Google Play: early access builds](https://play.google.com/apps/testing/net.sf.aria2)
 
 Wait, what?
 ==========
