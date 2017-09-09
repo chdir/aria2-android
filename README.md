@@ -12,7 +12,7 @@ For details of how those binaries are launched by the Android application see ma
 
 [Google Play: early access builds](https://play.google.com/apps/testing/net.sf.aria2)
 
-[Donate](http://aria2-android.sf.net/donate.php)
+[Donate via PayPal](http://aria2-android.sf.net/donate.php)
 
 Wait, what?
 ==========
