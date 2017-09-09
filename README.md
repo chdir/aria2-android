@@ -12,6 +12,8 @@ For details of how those binaries are launched by the Android application see ma
 
 [Google Play: early access builds](https://play.google.com/apps/testing/net.sf.aria2)
 
+[Donate](http://aria2-android.sf.net/donate.php)
+
 Wait, what?
 ==========
 [aria2][2] is a powerful [CLI][3] BitTorrent client, with support for HTTP/HTTPS, FTP and
