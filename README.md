@@ -9,6 +9,7 @@ For details of how those binaries are launched by the Android application see ma
 [RootCommands][1] (no root access is needed).
 
 [Google Play: store page](https://play.google.com/store/apps/details?id=net.sf.aria2)
+
 [Google Play: early access builds](https://play.google.com/apps/testing/net.sf.aria2)
 
 Wait, what?
